@@ -58,11 +58,11 @@ class _AddPlateScreenState extends State<AddPlateScreen> {
       if (userId != null) {
         final fixedCount = await _firestoreService.fixExistingMeals(userId);
         if (fixedCount > 0) {
-          print('Fixed $fixedCount meals with incorrect carb calculations');
+          debugPrint('Fixed $fixedCount meals with incorrect carb calculations');
         }
       }
     } catch (e) {
-      print('Error fixing existing meals: $e');
+      debugPrint('Error fixing existing meals: $e');
     }
   }
 
@@ -182,6 +182,8 @@ class _AddPlateScreenState extends State<AddPlateScreen> {
       await _firestoreService.addMeal(
           mealId, plateName, ingredientsData, userId);
 
+      if (!mounted) return;
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -198,9 +200,11 @@ class _AddPlateScreenState extends State<AddPlateScreen> {
         });
       } else {
         // If in edit mode, go back
+        if (!mounted) return;
         Navigator.pop(context);
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error saving meal: $e'),
@@ -208,28 +212,12 @@ class _AddPlateScreenState extends State<AddPlateScreen> {
         ),
       );
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
-  }
-
-  void _showBolChinoisInfo() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Le Bol Chinois Method'),
-        content: const Text(
-          'The quantity of the meal is calculated based on the "Le Bol Chinois" method, which estimates portion sizes using a standard bowl. This helps in calculating carbohydrate intake more accurately for insulin dosage.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override

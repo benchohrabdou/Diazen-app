@@ -97,63 +97,84 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> with Auto
             final List<Map<String, dynamic>> loadedActivities = [];
 
             for (var doc in snapshot.docs) {
-               try {
-                 final data = doc.data() as Map<String, dynamic>;
-                  // print('ActivityHistoryScreen stream listener: Processing activity doc: ${doc.id} - ${data['nom']}'); // Debug print per doc
+              try {
+                final data = doc.data();
 
-                 final String? name = data['nom'] as String?;
-                 final dynamic durationRaw = data['duration'];
-                 final dynamic caloriesRaw = data['cal30mn'];
-                 final dynamic timestampRaw = data['timestamp'];
+                final String? name = data['nom'] as String?;
+                final dynamic durationRaw = data['duration'];
+                final dynamic caloriesRaw = data['cal30mn'];
+                final dynamic timestampRaw = data['timestamp'];
 
-                 double duration = 0.0;
-                 if (durationRaw != null) {
-                    if (durationRaw is num) duration = durationRaw.toDouble();
-                    else if (durationRaw is String) duration = double.tryParse(durationRaw) ?? 0.0;
-                 }
-
-                  double calories = 0.0;
-                 if (caloriesRaw != null) {
-                    if (caloriesRaw is num) calories = caloriesRaw.toDouble();
-                    else if (caloriesRaw is String) calories = double.tryParse(caloriesRaw) ?? 0.0;
-                 }
-
-                  DateTime? timestamp;
-                  if (timestampRaw is String) {
-                    try { timestamp = DateTime.parse(timestampRaw); } catch (e) { print('ActivityHistoryScreen stream listener: Error parsing timestamp string ${timestampRaw}: $e'); }
-                  } else if (timestampRaw is Timestamp) {
-                    timestamp = timestampRaw.toDate();
+                double duration = 0.0;
+                if (durationRaw != null) {
+                  if (durationRaw is num) {
+                    duration = durationRaw.toDouble();
+                  } else if (durationRaw is String) {
+                    duration = double.tryParse(durationRaw) ?? 0.0;
                   }
+                }
 
-                 if (name != null && duration >= 0 && calories >= 0 && timestamp != null) {
-                    loadedActivities.add({
-                      'id': doc.id,
-                      'name': name,
-                      'duration': duration,
-                      'calories': calories,
-                      'timestamp': timestamp,
-                    });
-                 } else {
-                    print('ActivityHistoryScreen stream listener: Skipping activity doc ${doc.id} due to missing or invalid fields: $data');
-                 }
-               } catch (e) {
-                 print('ActivityHistoryScreen stream listener: Error parsing activity doc ${doc.id}: $e');
-               }
+                double calories = 0.0;
+                if (caloriesRaw != null) {
+                  if (caloriesRaw is num) {
+                    calories = caloriesRaw.toDouble();
+                  } else if (caloriesRaw is String) {
+                    calories = double.tryParse(caloriesRaw) ?? 0.0;
+                  }
+                }
+
+                DateTime? timestamp;
+                if (timestampRaw is String) {
+                  try {
+                    timestamp = DateTime.parse(timestampRaw);
+                  } catch (e) {
+                    debugPrint(
+                        'ActivityHistoryScreen stream listener: Error parsing timestamp string $timestampRaw: $e');
+                  }
+                } else if (timestampRaw is Timestamp) {
+                  timestamp = timestampRaw.toDate();
+                }
+
+                if (name != null &&
+                    duration >= 0 &&
+                    calories >= 0 &&
+                    timestamp != null) {
+                  loadedActivities.add({
+                    'id': doc.id,
+                    'name': name,
+                    'duration': duration,
+                    'calories': calories,
+                    'timestamp': timestamp,
+                  });
+                } else {
+                  debugPrint(
+                      'ActivityHistoryScreen stream listener: Skipping activity doc ${doc.id} due to missing or invalid fields: $data');
+                }
+              } catch (e) {
+                debugPrint(
+                    'ActivityHistoryScreen stream listener: Error parsing activity doc ${doc.id}: $e');
+              }
             }
 
-            print('ActivityHistoryScreen stream listener: Loaded ${loadedActivities.length} activity logs from stream.'); // Debug print
-            setState(() {
-              _activityHistory = loadedActivities;
-              _isLoading = false;
-              _errorMessage = ''; // Clear error on successful load
-            });
+            debugPrint(
+                'ActivityHistoryScreen stream listener: Loaded ${loadedActivities.length} activity logs from stream.');
+            if (mounted) {
+              setState(() {
+                _activityHistory = loadedActivities;
+                _isLoading = false;
+                _errorMessage = ''; // Clear error on successful load
+              });
+            }
           },
           onError: (error) {
-            print('ActivityHistoryScreen stream listener: Error receiving activity data: $error'); // Debug print
-            setState(() {
-              _errorMessage = 'Error loading activity history: $error';
-              _isLoading = false;
-            });
+            debugPrint(
+                'ActivityHistoryScreen stream listener: Error receiving activity data: $error');
+            if (mounted) {
+              setState(() {
+                _errorMessage = 'Error loading activity history: $error';
+                _isLoading = false;
+              });
+            }
           },
            cancelOnError: true, // Cancel subscription on error
         );
@@ -243,13 +264,16 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> with Auto
                         color: Colors.grey,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'No activity logged yet',
-                        style: TextStyle(
+                      Text(
+                        _errorMessage.isNotEmpty
+                            ? _errorMessage
+                            : 'No activity logged yet',
+                        style: const TextStyle(
                           fontFamily: 'SfProDisplay',
                           fontSize: 18,
                           color: Colors.grey,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),

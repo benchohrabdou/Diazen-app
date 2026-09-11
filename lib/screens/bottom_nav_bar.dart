@@ -22,7 +22,7 @@ class BottomNavBar extends StatelessWidget {
           onTabChange: onTabChange,
           backgroundColor: Colors.white,
           rippleColor: const Color(0xFF4A7BF7),
-          hoverColor: const Color(0xFF4A7BF7).withOpacity(0.1),
+          hoverColor: const Color(0xFF4A7BF7).withValues(alpha: 0.1),
           gap: 8,
           activeColor: Colors.white,
           color: Colors.white,

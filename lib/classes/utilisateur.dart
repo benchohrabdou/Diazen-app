@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'personne.dart';
 
 class Utilisateur extends Personne {
@@ -45,7 +46,7 @@ class Utilisateur extends Personne {
 
   double saisirGlycemie(double newGlycemie) {
     glycemie = newGlycemie;
-    print('Glycemie updated to $glycemie mg/dL');
+    debugPrint('Glycemie updated to $glycemie mg/dL');
     return glycemie;
   }
 

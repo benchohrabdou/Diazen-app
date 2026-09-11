@@ -119,7 +119,7 @@ class FirestoreService {
 
       return fixedCount;
     } catch (e) {
-      print('Error fixing meals: $e');
+      debugPrint('Error fixing meals: $e');
       return 0;
     }
   }

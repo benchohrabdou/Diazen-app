@@ -38,13 +38,17 @@ class _LoginpageState extends State<Loginpage> {
 
   void _loadUserEmailPassword() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       rememberPassword = prefs.getBool('rememberPassword') ?? false;
       if (rememberPassword) {
         emailController.text = prefs.getString('email') ?? '';
-        passwordController.text = prefs.getString('password') ?? '';
       }
     });
+    // Remove any plaintext password stored in legacy versions for security
+    if (prefs.containsKey('password')) {
+      await prefs.remove('password');
+    }
   }
 
   void _saveUserEmailPassword() async {
@@ -52,17 +56,17 @@ class _LoginpageState extends State<Loginpage> {
     if (rememberPassword) {
       await prefs.setBool('rememberPassword', true);
       await prefs.setString('email', emailController.text);
-      await prefs.setString('password', passwordController.text);
     } else {
       await prefs.setBool('rememberPassword', false);
       await prefs.remove('email');
-      await prefs.remove('password');
     }
+    await prefs.remove('password');
   }
 
   void _checkIfUserIsLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('isLoggedIn');
+    if (!mounted) return;
     if (isLoggedIn != null && isLoggedIn) {
       Navigator.pushReplacement(
         context,
@@ -82,12 +86,14 @@ class _LoginpageState extends State<Loginpage> {
           email: emailController.text,
           password: passwordController.text,
         );
+        if (!mounted) return;
         if (userCredential.user!.emailVerified) {
           _saveUserEmailPassword();
 
           // Mark user as logged in
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
+          if (!mounted) return;
 
           // Navigate to the main app screen
           Navigator.pushReplacement(
@@ -102,15 +108,18 @@ class _LoginpageState extends State<Loginpage> {
           );
         }
       } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.message ?? 'Error occurred'),
           ),
         );
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -408,7 +417,8 @@ class _LoginpageState extends State<Loginpage> {
                                   Expanded(
                                     child: Divider(
                                       thickness: 0.7,
-                                      color: Colors.grey.withOpacity(0.5),
+                                      color:
+                                          Colors.grey.withValues(alpha: 0.5),
                                     ),
                                   ),
                                   const Padding(
@@ -427,7 +437,8 @@ class _LoginpageState extends State<Loginpage> {
                                   Expanded(
                                     child: Divider(
                                       thickness: 0.7,
-                                      color: Colors.grey.withOpacity(0.5),
+                                      color:
+                                          Colors.grey.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ],

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:diazen/classes/injectiondata.dart';
 import 'dart:math' as math;
 
 class RapportScreen extends StatefulWidget {
@@ -141,7 +139,7 @@ class _RapportScreenState extends State<RapportScreen> {
           continue;
         }
 
-        if (dateStr.isNotEmpty && timestamp != null) {
+        if (dateStr.isNotEmpty) {
           final date = DateFormat('yyyy-MM-dd').parse(dateStr);
           final month = DateFormat('MMMM yyyy').format(date);
 
@@ -200,11 +198,10 @@ class _RapportScreenState extends State<RapportScreen> {
           continue;
         }
 
-        if (timestamp == null ||
-            timeStr == null ||
+        if (timeStr == null ||
             units == null ||
             glycemie == null) {
-          print('Skipping injection record due to null data.');
+          debugPrint('Skipping injection record due to null data.');
           continue;
         }
 
@@ -265,16 +262,16 @@ class _RapportScreenState extends State<RapportScreen> {
     List<Map<String, dynamic>> allInjectionData = [];
 
     // Process data in batches
-    historyData.values.forEach((monthData) {
-      monthData.values.forEach((dayLogs) {
+    for (var monthData in historyData.values) {
+      for (var dayLogs in monthData.values) {
         // Add glucose logs
         allGlucoseData.addAll(dayLogs.where((log) => log['type'] == 'glucose'));
 
         // Add injection data
         allInjectionData
             .addAll(dayLogs.where((log) => log['type'] == 'injection'));
-      });
-    });
+      }
+    }
 
     if (allGlucoseData.isEmpty && allInjectionData.isEmpty) {
       _minTimestamp = 0;
@@ -423,9 +420,9 @@ class _RapportScreenState extends State<RapportScreen> {
     DateTime? minGlucoseTimestamp;
     DateTime? maxGlucoseTimestamp;
 
-    historyData.values.forEach((monthData) {
-      monthData.values.forEach((dayLogs) {
-        dayLogs.forEach((log) {
+    for (var monthData in historyData.values) {
+      for (var dayLogs in monthData.values) {
+        for (var log in dayLogs) {
           if (log['type'] == 'glucose') {
             final double? glucoseValue =
                 double.tryParse(log['value'].toString());
@@ -450,20 +447,20 @@ class _RapportScreenState extends State<RapportScreen> {
               insulinCount++;
             }
           }
-        });
-      });
-    });
+        }
+      }
+    }
 
     // Store calculated statistics in state variables (you might need to add these)
-    // For now, just print them
-    print('Overall Statistics:');
-    print(
+    // For now, just debugPrint them
+    debugPrint('Overall Statistics:');
+    debugPrint(
         '  Average Glucose: ${glucoseCount > 0 ? (totalGlucose / glucoseCount).toStringAsFixed(1) : 'N/A'} mg/dL');
-    print(
-        '  Min Glucose: ${minGlucose != double.infinity ? minGlucose.toStringAsFixed(1) : 'N/A'} mg/dL (at ${minGlucoseTimestamp != null ? DateFormat('dd/MM HH:mm').format(minGlucoseTimestamp!) : 'N/A'})');
-    print(
-        '  Max Glucose: ${maxGlucose != double.negativeInfinity ? maxGlucose.toStringAsFixed(1) : 'N/A'} mg/dL (at ${maxGlucoseTimestamp != null ? DateFormat('dd/MM HH:mm').format(maxGlucoseTimestamp!) : 'N/A'})');
-    print(
+    debugPrint(
+        '  Min Glucose: ${minGlucose != double.infinity ? minGlucose.toStringAsFixed(1) : 'N/A'} mg/dL (at ${minGlucoseTimestamp != null ? DateFormat('dd/MM HH:mm').format(minGlucoseTimestamp) : 'N/A'})');
+    debugPrint(
+        '  Max Glucose: ${maxGlucose != double.negativeInfinity ? maxGlucose.toStringAsFixed(1) : 'N/A'} mg/dL (at ${maxGlucoseTimestamp != null ? DateFormat('dd/MM HH:mm').format(maxGlucoseTimestamp) : 'N/A'})');
+    debugPrint(
         '  Average Insulin: ${insulinCount > 0 ? (totalInsulin / insulinCount).toStringAsFixed(1) : 'N/A'} units');
 
     // Store statistics in state variables
@@ -476,10 +473,10 @@ class _RapportScreenState extends State<RapportScreen> {
         ? maxGlucose.toStringAsFixed(1)
         : 'N/A';
     _minGlucoseTimestamp = minGlucoseTimestamp != null
-        ? DateFormat('dd/MM HH:mm').format(minGlucoseTimestamp!)
+        ? DateFormat('dd/MM HH:mm').format(minGlucoseTimestamp)
         : 'N/A';
     _maxGlucoseTimestamp = maxGlucoseTimestamp != null
-        ? DateFormat('dd/MM HH:mm').format(maxGlucoseTimestamp!)
+        ? DateFormat('dd/MM HH:mm').format(maxGlucoseTimestamp)
         : 'N/A';
     _avgInsulin = insulinCount > 0
         ? (totalInsulin / insulinCount).toStringAsFixed(1)
@@ -567,13 +564,13 @@ class _RapportScreenState extends State<RapportScreen> {
                                           (_maxTimestamp - _minTimestamp) / 5,
                                       getDrawingHorizontalLine: (value) {
                                         return FlLine(
-                                          color: Colors.grey.withOpacity(0.2),
+                                          color: Colors.grey.withValues(alpha: 0.2),
                                           strokeWidth: 1,
                                         );
                                       },
                                       getDrawingVerticalLine: (value) {
                                         return FlLine(
-                                          color: Colors.grey.withOpacity(0.2),
+                                          color: Colors.grey.withValues(alpha: 0.2),
                                           strokeWidth: 1,
                                         );
                                       },
@@ -613,7 +610,7 @@ class _RapportScreenState extends State<RapportScreen> {
                                     lineTouchData: LineTouchData(
                                       touchTooltipData: LineTouchTooltipData(
                                         tooltipBgColor:
-                                            Colors.blueGrey.withOpacity(0.8),
+                                            Colors.blueGrey.withValues(alpha: 0.8),
                                         getTooltipItems:
                                             (List<LineBarSpot> touchedSpots) {
                                           return touchedSpots.map((spot) {
@@ -676,13 +673,13 @@ class _RapportScreenState extends State<RapportScreen> {
                                           (_maxTimestamp - _minTimestamp) / 5,
                                       getDrawingHorizontalLine: (value) {
                                         return FlLine(
-                                          color: Colors.grey.withOpacity(0.2),
+                                          color: Colors.grey.withValues(alpha: 0.2),
                                           strokeWidth: 1,
                                         );
                                       },
                                       getDrawingVerticalLine: (value) {
                                         return FlLine(
-                                          color: Colors.grey.withOpacity(0.2),
+                                          color: Colors.grey.withValues(alpha: 0.2),
                                           strokeWidth: 1,
                                         );
                                       },
@@ -721,8 +718,8 @@ class _RapportScreenState extends State<RapportScreen> {
                                     ],
                                 lineTouchData: LineTouchData(
                                   touchTooltipData: LineTouchTooltipData(
-                                        tooltipBgColor:
-                                            Colors.blueGrey.withOpacity(0.8),
+                                         tooltipBgColor:
+                                             Colors.blueGrey.withValues(alpha: 0.8),
                                         getTooltipItems:
                                             (List<LineBarSpot> touchedSpots) {
                                       return touchedSpots.map((spot) {
@@ -811,54 +808,18 @@ class _RapportScreenState extends State<RapportScreen> {
                                             fontWeight: FontWeight.bold,
                                             color: Color(0xFF4A7BF7))),
                                     Text('$_avgInsulin units'),
+                                    const SizedBox(height: 8),
+                                    Text('Insulin-to-Carb Ratio (ICR): ',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF4A7BF7))),
+                                    Text('$_patientICR g/unit'),
                                   ],
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-    );
-  }
-
-  Widget _buildPatientInfo() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Patient Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'SfProDisplay',
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Text(
-                  'ICR: ',
-                  style: TextStyle(
-                    fontFamily: 'SfProDisplay',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  _patientICR,
-                  style: const TextStyle(
-                    fontFamily: 'SfProDisplay',
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-            // ... other patient information ...
-                        ],
                       ),
                     ),
     );

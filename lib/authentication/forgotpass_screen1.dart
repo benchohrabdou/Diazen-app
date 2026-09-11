@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:diazen/authentication/verificateemailscreen.dart'; // Removed as per new flow
 // import 'package:mailer/mailer.dart'; // Removed as per new flow
 // import 'package:mailer/smtp_server.dart'; // Removed as per new flow
@@ -85,6 +84,7 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
       _isLoading = true;
     });
     await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
     setState(() {
       _buttonScale = 1.0;
     });
@@ -113,6 +113,7 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
       // Optionally navigate the user to an info screen telling them to check email
       // For now, we'll stay on this screen.
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       String errorMessage = 'An error occurred';
       switch (e.code) {
         case 'invalid-email':
@@ -128,13 +129,16 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
         SnackBar(content: Text(errorMessage)),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:diazen/screens/add_plate_screen.dart';
 import 'package:diazen/screens/meal_detail_screen.dart';
 
 class SavedMealsScreen extends StatefulWidget {
@@ -66,7 +65,7 @@ class _SavedMealsScreenState extends State<SavedMealsScreen> {
           });
         }
 
-        print('Loaded ${meals.length} meals'); // Debug print
+        debugPrint('Loaded ${meals.length} meals'); // Debug print
         setState(() {
           _meals = meals;
           _filteredMeals = meals;
@@ -74,7 +73,7 @@ class _SavedMealsScreenState extends State<SavedMealsScreen> {
         });
       }
     } catch (e) {
-      print('Error loading meals: $e');
+      debugPrint('Error loading meals: $e');
       setState(() {
         _isLoading = false;
       });
@@ -257,7 +256,7 @@ class _SavedMealsScreenState extends State<SavedMealsScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),

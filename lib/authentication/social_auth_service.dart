@@ -31,12 +31,16 @@ class SocialAuthService {
       final userCredential = await _auth.signInWithCredential(credential);
 
       // Handle successful sign-in
-      await _handleSuccessfulSignIn(context, userCredential);
+      if (context.mounted) {
+        await _handleSuccessfulSignIn(context, userCredential);
+      }
 
       return userCredential;
     } catch (e) {
-      _showErrorMessage(
-          context, 'Failed to sign in with Google: ${e.toString()}');
+      if (context.mounted) {
+        _showErrorMessage(
+            context, 'Failed to sign in with Google: ${e.toString()}');
+      }
       return null;
     }
   }
@@ -65,12 +69,16 @@ class SocialAuthService {
       final userCredential = await _auth.signInWithCredential(credential);
 
       // Handle successful sign-in
-      await _handleSuccessfulSignIn(context, userCredential);
+      if (context.mounted) {
+        await _handleSuccessfulSignIn(context, userCredential);
+      }
 
       return userCredential;
     } catch (e) {
-      _showErrorMessage(
-          context, 'Failed to sign in with Facebook: ${e.toString()}');
+      if (context.mounted) {
+        _showErrorMessage(
+            context, 'Failed to sign in with Facebook: ${e.toString()}');
+      }
       return null;
     }
   }
@@ -84,6 +92,8 @@ class SocialAuthService {
       // Mark user as logged in
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
+
+      if (!context.mounted) return;
 
       // Get user info
       String firstName = '';
@@ -103,6 +113,8 @@ class SocialAuthService {
         firstName = userData['first_name'] ?? firstName;
         lastName = userData['last_name'] ?? lastName;
       }
+
+      if (!context.mounted) return;
 
       // Navigate based on whether user is new
       if (userCredential.additionalUserInfo?.isNewUser ?? false) {
@@ -129,6 +141,7 @@ class SocialAuthService {
   }
 
   void _showErrorMessage(BuildContext context, String message) {
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

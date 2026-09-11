@@ -14,7 +14,7 @@ class DoctorHomeScreen extends StatefulWidget {
 class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   bool _isLoading = true;
   String _doctorName = "doctor";
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _allPatients = [];
   List<Map<String, dynamic>> _filteredPatients = [];
   List<String> _favoritePatientIds = [];
@@ -298,8 +298,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.black.withOpacity(0.25),
-                              Colors.black.withOpacity(0.1),
+                              Colors.black.withValues(alpha: 0.25),
+                              Colors.black.withValues(alpha: 0.1),
                             ],
                           ),
                         ),
@@ -337,8 +337,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                                           (p) => p['id'] == id,
                                           orElse: () => <String, dynamic>{},
                                         );
-                                        if (patient.isEmpty)
+                                        if (patient.isEmpty) {
                                           return const SizedBox.shrink();
+                                        }
 
                                         return Padding(
                                           padding: const EdgeInsets.symmetric(

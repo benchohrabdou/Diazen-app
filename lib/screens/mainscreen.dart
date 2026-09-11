@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'bottom_nav_bar.dart';
 import 'home_screen.dart';
-import 'add_plate_screen.dart';
-import 'activity_screen.dart';
 import 'history_screen.dart';
 import 'saved_meals_screen.dart';
 import 'activity_history_screen.dart';

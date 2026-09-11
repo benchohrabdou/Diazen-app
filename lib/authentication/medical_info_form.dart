@@ -66,7 +66,9 @@ class _MedicalInfoFormState extends State<MedicalInfoForm> {
               primary: Color(0xFF4A7BF7),
               onPrimary: Colors.white,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Colors.white,
+            ),
           ),
           child: child!,
         );
@@ -117,6 +119,8 @@ class _MedicalInfoFormState extends State<MedicalInfoForm> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
 
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Account setup complete!'),
@@ -128,6 +132,7 @@ class _MedicalInfoFormState extends State<MedicalInfoForm> {
         if (widget.onComplete != null) {
           widget.onComplete!();
         } else {
+          if (!mounted) return;
           // Navigate to main screen instead of login page
           Navigator.pushReplacement(
             context,

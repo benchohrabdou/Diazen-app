@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:diazen/screens/add_plate_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MealDetailScreen extends StatelessWidget {
   final Map<String, dynamic> meal;
@@ -41,8 +40,10 @@ class MealDetailScreen extends StatelessWidget {
                         List<Map<String, dynamic>>.from(meal['ingredients']),
                   ),
                 ),
-              ).then((_) => Navigator.pop(
-                  context, true)); // Indicate a potential change on back
+              ).then((_) {
+                if (!context.mounted) return;
+                Navigator.pop(context, true);
+              }); // Indicate a potential change on back
             },
           ),
         ],

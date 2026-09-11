@@ -2,7 +2,6 @@ import 'package:diazen/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:diazen/authentication/loginpage.dart';
-import 'package:diazen/screens/mainscreen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 Future<void> main() async {

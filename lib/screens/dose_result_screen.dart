@@ -1,7 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class DoseResultScreen extends StatefulWidget {
   final double dose;
@@ -18,7 +15,7 @@ class DoseResultScreen extends StatefulWidget {
   final double? adjustedCarbAmount;
 
   const DoseResultScreen({
-    Key? key,
+    super.key,
     required this.dose,
     this.glucoseLevel,
     this.carbAmount,
@@ -31,17 +28,13 @@ class DoseResultScreen extends StatefulWidget {
     this.unplannedActivityCalories,
     this.plannedActivityCalories,
     this.adjustedCarbAmount,
-  }) : super(key: key);
+  });
 
   @override
   State<DoseResultScreen> createState() => _DoseResultScreenState();
 }
 
 class _DoseResultScreenState extends State<DoseResultScreen> {
-  bool _isSaving = false;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,10 +67,10 @@ class _DoseResultScreenState extends State<DoseResultScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4A7BF7).withOpacity(0.1),
+                          color: const Color(0xFF4A7BF7).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFF4A7BF7).withOpacity(0.3),
+                            color: const Color(0xFF4A7BF7).withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -220,8 +213,7 @@ class _DoseResultScreenState extends State<DoseResultScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed:
-                      _isSaving ? null : () => Navigator.of(context).pop(true),
+                  onPressed: () => Navigator.of(context).pop(true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4A7BF7),
                     padding: const EdgeInsets.symmetric(vertical: 14),

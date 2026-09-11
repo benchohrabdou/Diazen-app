@@ -5,9 +5,6 @@ import 'package:diazen/screens/add_plate_screen.dart';
 import 'package:diazen/screens/dose_result_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
-import 'package:hive/hive.dart';
 
 class CalculateDoseScreen extends StatefulWidget {
   const CalculateDoseScreen({super.key});
@@ -24,14 +21,11 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
   final TextEditingController mealController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late Box<dynamic> _mealsCache;
 
   bool unplannedActivity = false;
   bool plannedActivity = false;
   bool _isSaving = false;
   bool _isLoadingMeals = false;
-  bool _isLoadingActivity = false;
-  bool _isLoadingICR = true;
   bool _isLoadingPatientMedicalInfo = true;
 
   String unplannedActivityIntensity = 'none';
@@ -63,18 +57,15 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeCache();
     _resetScreen();
     _loadPatientMedicalInfo().then((_) {
-      setState(() {
-        _isLoadingPatientMedicalInfo = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingPatientMedicalInfo = false;
+        });
+      }
     });
     _loadUserMeals();
-  }
-
-  Future<void> _initializeCache() async {
-    _mealsCache = await Hive.openBox('meals_cache');
   }
 
   void _resetScreen() {
@@ -137,18 +128,18 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
           setState(() {
             icr = (data.containsKey('ratioInsulineGlucide') && data['ratioInsulineGlucide'] is num)
                 ? (data['ratioInsulineGlucide'] as num).toDouble()
-                : double.tryParse(data!['ratioInsulineGlucide'].toString()) ?? 0.0;
+                : double.tryParse(data['ratioInsulineGlucide'].toString()) ?? 0.0;
 
             isf = (data.containsKey('sensitiviteInsuline') &&
                     data['sensitiviteInsuline'] is num)
                 ? (data['sensitiviteInsuline'] as num).toDouble()
-                : double.tryParse(data!['sensitiviteInsuline'].toString()) ??
+                : double.tryParse(data['sensitiviteInsuline'].toString()) ??
                     50.0;
 
             targetGlucose = (data.containsKey('targetGlucose') &&
                     data['targetGlucose'] is num)
                 ? (data['targetGlucose'] as num).toDouble()
-                : double.tryParse(data!['targetGlucose'].toString()) ?? 100.0;
+                : double.tryParse(data['targetGlucose'].toString()) ?? 100.0;
           });
         }
       }
@@ -219,36 +210,6 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
     }
   }
 
-  double _calculateTotalCarbs(Map<String, dynamic> data) {
-    double totalCarbs = 0;
-
-    if (data.containsKey('totalCarbs')) {
-      totalCarbs = (data['totalCarbs'] is num)
-          ? (data['totalCarbs'] as num).toDouble()
-          : double.tryParse(data['totalCarbs'].toString()) ?? 0;
-    } else if (data.containsKey('totalGlucides')) {
-      totalCarbs = (data['totalGlucides'] is num)
-          ? (data['totalGlucides'] as num).toDouble()
-          : double.tryParse(data['totalGlucides'].toString()) ?? 0;
-    }
-
-    if (totalCarbs < 1 &&
-        data.containsKey('glucidesPer100g') &&
-        data.containsKey('quantity')) {
-      double glucidesPer100g = (data['glucidesPer100g'] is num)
-          ? (data['glucidesPer100g'] as num).toDouble()
-          : double.tryParse(data['glucidesPer100g'].toString()) ?? 0;
-
-      double quantity = (data['quantity'] is num)
-          ? (data['quantity'] as num).toDouble()
-          : double.tryParse(data['quantity'].toString()) ?? 0;
-
-      totalCarbs = (glucidesPer100g * quantity) / 100;
-    }
-
-    return totalCarbs;
-  }
-
   double getReductionPercentFromCalories(double totalCalories) {
     if (totalCalories <= 50) return 5;
     if (totalCalories <= 100) return 10;
@@ -273,7 +234,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
 
     double correctionDose = (glucose - targetGlucose) / isf;
     print(
-        'Correction dose: $correctionDose units ((${glucose} - ${targetGlucose}) / $isf)');
+        'Correction dose: $correctionDose units (($glucose - $targetGlucose) / $isf)');
 
     double totalDose = mealDose + correctionDose;
     print('Total dose before activity adjustment: $totalDose units');
@@ -489,7 +450,9 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                       MaterialPageRoute(builder: (_) => const AddPlateScreen()),
                     ).then((_) {
                       _loadUserMeals();
-                      Navigator.pop(context);
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     });
                   },
                   child: const Text(
@@ -580,134 +543,6 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
     }
   }
 
-  Future<void> _checkRecentActivity({bool isPlanned = false}) async {
-    setState(() {
-      _isLoadingActivity = true;
-    });
-
-    try {
-      final User? currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        print('Checking for activities for user: ${currentUser.uid}');
-
-        final QuerySnapshot activitySnapshot = await _firestore
-            .collection('activities')
-            .where('userId', isEqualTo: currentUser.uid)
-            .orderBy('timestamp', descending: true)
-            .limit(1)
-            .get();
-
-        print('Found ${activitySnapshot.docs.length} activities');
-
-        if (activitySnapshot.docs.isNotEmpty) {
-          final latestActivity =
-              activitySnapshot.docs.first.data() as Map<String, dynamic>;
-          print('Latest activity data: $latestActivity');
-
-          double calories = 0.0;
-          if (latestActivity.containsKey('cal30mn')) {
-            calories =
-                double.tryParse(latestActivity['cal30mn'].toString()) ?? 0.0;
-            print('Found calories in cal30mn field: $calories');
-          } else if (latestActivity.containsKey('calories')) {
-            calories =
-                double.tryParse(latestActivity['calories'].toString()) ?? 0.0;
-            print('Found calories in calories field: $calories');
-          } else if (latestActivity.containsKey('caloriesPer30Min')) {
-            calories = double.tryParse(
-                    latestActivity['caloriesPer30Min'].toString()) ??
-                0.0;
-            print('Found calories in caloriesPer30Min field: $calories');
-          }
-
-          int duration = 30;
-          if (latestActivity.containsKey('duration')) {
-            duration =
-                int.tryParse(latestActivity['duration'].toString()) ?? 30;
-            print('Found duration: $duration');
-          }
-
-          double reduction = 0.0;
-          if (calories > 0) {
-            if (calories < 30) {
-              reduction = 0.05;
-            } else if (calories < 60) {
-              reduction = 0.10;
-            } else if (calories < 90) {
-              reduction = 0.15;
-            } else if (calories < 120) {
-              reduction = 0.20;
-            } else if (calories < 150) {
-              reduction = 0.25;
-            } else if (calories < 200) {
-              reduction = 0.30;
-            } else if (calories < 250) {
-              reduction = 0.35;
-            } else {
-              reduction = 0.40;
-            }
-
-            if (duration > 45) {
-              reduction += 0.05;
-            }
-          } else {
-            String activityName =
-                latestActivity['nom']?.toString().toLowerCase() ?? '';
-            print('No calories found, using activity name: $activityName');
-
-            if (activityName.contains('walk') ||
-                activityName.contains('light')) {
-              reduction = 0.10;
-            } else if (activityName.contains('jog') ||
-                activityName.contains('moderate')) {
-              reduction = 0.20;
-            } else if (activityName.contains('run') ||
-                activityName.contains('vigorous')) {
-              reduction = 0.30;
-            } else if (activityName.contains('sprint') ||
-                activityName.contains('intense')) {
-              reduction = 0.40;
-            } else {
-              reduction = 0.15;
-            }
-          }
-
-          print('Final reduction: ${(reduction * 100).toStringAsFixed(0)}%');
-
-          setState(() {
-            if (isPlanned) {
-              plannedActivityReductionFactor = reduction;
-            } else {
-              unplannedActivityReductionFactor = reduction;
-            }
-          });
-        } else {
-          print('No activities found');
-          setState(() {
-            if (isPlanned) {
-              plannedActivityReductionFactor = 0.0;
-            } else {
-              unplannedActivityReductionFactor = 0.0;
-            }
-          });
-        }
-      }
-    } catch (e) {
-      print('Error checking recent activity: $e');
-      setState(() {
-        if (isPlanned) {
-          plannedActivityReductionFactor = 0.0;
-        } else {
-          unplannedActivityReductionFactor = 0.0;
-        }
-      });
-    } finally {
-      setState(() {
-        _isLoadingActivity = false;
-      });
-    }
-  }
-
   void _handleUnplannedActivity() async {
     print('Starting unplanned activity selection');
     final User? currentUser = _auth.currentUser;
@@ -764,7 +599,9 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                               _defaultActivityDuration;
                         });
                       }
-                      Navigator.pop(context);
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     });
                   },
                   child: const Text(
@@ -796,13 +633,13 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                     .get(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    print('Activity query error: \${snapshot.error}');
+                    debugPrint('Activity query error: ${snapshot.error}');
                   }
                   if (snapshot.hasData) {
-                    print(
-                        'Activity query found \${snapshot.data!.docs.length} docs');
+                    debugPrint(
+                        'Activity query found ${snapshot.data!.docs.length} docs');
                     for (var doc in snapshot.data!.docs) {
-                      print('Activity doc: \${doc.data()}');
+                      debugPrint('Activity doc: ${doc.data()}');
                     }
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -880,7 +717,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                             ),
                           ),
                           subtitle: Text(
-                            '${calories.toStringAsFixed(1)} calories/${duration} minutes',
+                            '${calories.toStringAsFixed(1)} calories/$duration minutes',
                             style: const TextStyle(
                               fontFamily: 'SfProDisplay',
                               color: Colors.grey,
@@ -991,7 +828,9 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                               _defaultActivityDuration;
                         });
                       }
-                      Navigator.pop(context);
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
                     });
                   },
                   child: const Text(
@@ -1023,13 +862,13 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                     .get(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    print('Activity query error: \${snapshot.error}');
+                    debugPrint('Activity query error: ${snapshot.error}');
                   }
                   if (snapshot.hasData) {
-                    print(
-                        'Activity query found \${snapshot.data!.docs.length} docs');
+                    debugPrint(
+                        'Activity query found ${snapshot.data!.docs.length} docs');
                     for (var doc in snapshot.data!.docs) {
-                      print('Activity doc: \${doc.data()}');
+                      debugPrint('Activity doc: ${doc.data()}');
                     }
                   }
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -1107,7 +946,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                             ),
                           ),
                           subtitle: Text(
-                            '${calories.toStringAsFixed(1)} calories/${duration} minutes',
+                            '${calories.toStringAsFixed(1)} calories/$duration minutes',
                             style: const TextStyle(
                               fontFamily: 'SfProDisplay',
                               color: Colors.grey,
@@ -1227,6 +1066,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
       final exists = await checkIfMealExists(meal);
 
       if (!exists) {
+        if (!mounted) return;
         final manualCarbs = await showDialog<double>(
           context: context,
           barrierDismissible: false,
@@ -1275,7 +1115,9 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                       MaterialPageRoute(builder: (_) => const AddPlateScreen()),
                     ).then((_) {
                       _loadUserMeals();
-                      Navigator.pop(context, null);
+                      if (mounted) {
+                        Navigator.pop(context, null);
+                      }
                     });
                   },
                   child: const Text('Create Meal'),
@@ -1371,6 +1213,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
 
     final roundedDose = dose.round();
 
+    if (!mounted) return;
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -1393,11 +1236,16 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
         ),
       ),
     );
+    if (!mounted) return;
     _resetScreen();
     if (result == true) {
-      Navigator.pop(context, true);
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
     }
-    setState(() => _isSaving = false);
+    if (mounted) {
+      setState(() => _isSaving = false);
+    }
   }
 
   Widget _buildLabel(String text, String iconPath) {
@@ -1449,60 +1297,6 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
         suffixIcon: suffixIcon,
       ),
       style: const TextStyle(fontFamily: 'SfProDisplay'),
-    );
-  }
-
-  Widget _buildActivityIntensitySelector({
-    required String title,
-    required String currentValue,
-    required Function(String) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontFamily: 'SfProDisplay',
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF4A7BF7),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: currentValue,
-              isExpanded: true,
-              style: const TextStyle(
-                fontFamily: 'SfProDisplay',
-                color: Colors.black87,
-              ),
-              items: const [
-                DropdownMenuItem(value: 'none', child: Text('No Activity')),
-                DropdownMenuItem(value: 'light', child: Text('Light (10%)')),
-                DropdownMenuItem(
-                    value: 'moderate', child: Text('Moderate (20%)')),
-                DropdownMenuItem(
-                    value: 'vigorous', child: Text('Vigorous (30%)')),
-                DropdownMenuItem(
-                    value: 'intense', child: Text('Intense (40%)')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  onChanged(value);
-                }
-              },
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -1578,7 +1372,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                               }
                             });
                           },
-                          fillColor: MaterialStateProperty.all(
+                          fillColor: WidgetStateProperty.all(
                               const Color(0xFF4A7BF7)),
                         ),
                         const Text('Yes',
@@ -1595,7 +1389,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                               }
                             });
                           },
-                          fillColor: MaterialStateProperty.all(
+                          fillColor: WidgetStateProperty.all(
                               const Color(0xFF4A7BF7)),
                         ),
                         const Text('No',
@@ -1756,7 +1550,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                               }
                             });
                           },
-                          fillColor: MaterialStateProperty.all(
+                          fillColor: WidgetStateProperty.all(
                               const Color(0xFF4A7BF7)),
                         ),
                         const Text('Yes',
@@ -1773,7 +1567,7 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                               }
                             });
                           },
-                          fillColor: MaterialStateProperty.all(
+                          fillColor: WidgetStateProperty.all(
                               const Color(0xFF4A7BF7)),
                         ),
                         const Text('No',

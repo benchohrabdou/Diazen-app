@@ -25,7 +25,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isTyping = false;
-  double _buttonScale = 1.0;
+  final double _buttonScale = 1.0;
   bool _isLoading = false;
 
   @override
@@ -41,39 +41,24 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
 
   void _checkTyping() {
     setState(() {
-      _isTyping = _passwordController.text.isNotEmpty || _confirmPasswordController.text.isNotEmpty;
+      _isTyping = _passwordController.text.isNotEmpty ||
+          _confirmPasswordController.text.isNotEmpty;
     });
   }
 
   @override
   void dispose() {
-    _passwordController.removeListener(_checkTyping);
-    _confirmPasswordController.removeListener(_checkTyping);
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _passwordFocus.dispose();
     _confirmPasswordFocus.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _onUpdatePressed() async {
-    if (_passwordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
-
+  Future<void> _updatePassword() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match')),
-      );
-      return;
-    }
-
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password must be at least 6 characters long')),
       );
       return;
     }
@@ -93,7 +78,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         );
       } catch (e) {
         // Ignore expected sign-in failure due to incorrect password
-         print('Temporary sign-in attempt for re-auth failed: $e');
+         debugPrint('Temporary sign-in attempt for re-auth failed: $e');
       }
 
       // Get the user again after the potential re-authentication attempt
@@ -102,6 +87,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       if (user == null || user.email != widget.email) {
          // If after the sign-in attempt, we still don't have the expected user,
          // it indicates a deeper authentication issue.
+         if (!mounted) return;
          ScaffoldMessenger.of(context).showSnackBar(
            const SnackBar(content: Text('Authentication state invalid. Please restart the password reset.')),
          );
@@ -124,6 +110,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         ),
       );
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       String errorMessage = 'An error occurred';
       // Handle specific Firebase Auth errors during password update
       switch (e.code) {
@@ -146,14 +133,17 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
         SnackBar(content: Text(errorMessage)),
       );
     } catch (e) {
+      if (!mounted) return;
       // Handle other potential errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating password: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -302,7 +292,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _onUpdatePressed,
+                  onPressed: _isLoading ? null : _updatePassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isTyping
                         ? const Color(0xFF4A7BF7)

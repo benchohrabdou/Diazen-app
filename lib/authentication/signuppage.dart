@@ -21,8 +21,6 @@ class _SignuppageState extends State<Signuppage> {
   bool _isLoading = false;
   bool _emailSent = false;
   Timer? _verificationTimer;
-  String? _userId;
-  String? _userEmail;
 
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -66,11 +64,10 @@ class _SignuppageState extends State<Signuppage> {
 
         await userCredential.user!.sendEmailVerification();
 
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
           _emailSent = true;
-          _userId = userCredential.user!.uid;
-          _userEmail = userCredential.user!.email;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -97,6 +94,7 @@ class _SignuppageState extends State<Signuppage> {
             errorMessage = e.message ?? 'An error occurred';
         }
 
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -137,6 +135,7 @@ class _SignuppageState extends State<Signuppage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
 
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -155,6 +154,7 @@ class _SignuppageState extends State<Signuppage> {
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please verify your email before proceeding.'),
@@ -163,6 +163,7 @@ class _SignuppageState extends State<Signuppage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -170,9 +171,11 @@ class _SignuppageState extends State<Signuppage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -185,6 +188,7 @@ class _SignuppageState extends State<Signuppage> {
       User? user = _auth.currentUser;
       if (user != null) {
         await user.sendEmailVerification();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content:
@@ -200,6 +204,7 @@ class _SignuppageState extends State<Signuppage> {
         user = _auth.currentUser;
         if (user != null) {
           await user.sendEmailVerification();
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content:
@@ -210,6 +215,7 @@ class _SignuppageState extends State<Signuppage> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -217,9 +223,11 @@ class _SignuppageState extends State<Signuppage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -605,7 +613,7 @@ class _SignuppageState extends State<Signuppage> {
               Expanded(
                 child: Divider(
                   thickness: 0.7,
-                  color: Colors.grey.withOpacity(0.5),
+                  color: Colors.grey.withValues(alpha: 0.5),
                 ),
               ),
               const Padding(
@@ -623,7 +631,7 @@ class _SignuppageState extends State<Signuppage> {
               Expanded(
                 child: Divider(
                   thickness: 0.7,
-                  color: Colors.grey.withOpacity(0.5),
+                  color: Colors.grey.withValues(alpha: 0.5),
                 ),
               ),
             ],

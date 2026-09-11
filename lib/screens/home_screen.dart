@@ -3,17 +3,12 @@ import 'package:diazen/screens/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:diazen/screens/calculate_dose_screen.dart';
 import 'package:diazen/screens/log_glucose_screen.dart';
-import 'package:diazen/screens/settings_screen.dart';
 import 'package:diazen/screens/custom_card.dart';
 import 'package:diazen/screens/add_plate_screen.dart';
-import 'package:diazen/screens/saved_meals_screen.dart';
-import 'package:diazen/screens/history_screen.dart';
 import 'package:diazen/screens/activity_screen.dart';
 import 'package:diazen/classes/firestore_ops.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,11 +20,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String _userName = '';
   bool _isLoading = true;
-  String _errorMessage = '';
 
   // Last operations
   String _lastGlucose = 'N/A';
@@ -46,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUserData() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
     });
 
     try {
@@ -54,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final prefs = await SharedPreferences.getInstance();
       final cachedName = prefs.getString('userName');
 
-      if (cachedName != null && cachedName.isNotEmpty) {
+      if (cachedName != null && cachedName.isNotEmpty && mounted) {
         setState(() {
           _userName = cachedName;
         });
@@ -67,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await _firestoreService.getDocument('users', currentUser.uid);
         if (userDoc.exists) {
           final userData = userDoc.data() as Map<String, dynamic>;
-          print('User document found: ' + userData.toString());
+          debugPrint('User document found: $userData');
           final name = userData['prenom'] ?? '';
 
           // Update cache
@@ -76,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Get last operations
           final lastOperations =
               userData['lastOperations'] as Map<String, dynamic>? ?? {};
-          print('Last operations data: ' + lastOperations.toString());
+          debugPrint('Last operations data: $lastOperations');
 
           // Get glucose values from both injection and glucose log
           DateTime? lastGlucoseTime;
@@ -91,10 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 final timestamp = DateTime.parse(glucoseData['timestamp']);
                 lastGlucoseTime = timestamp;
                 lastGlucoseValue = glucoseData['value']?.toString();
-                print(
+                debugPrint(
                     'Found glucose log: $lastGlucoseValue at $lastGlucoseTime');
               } catch (e) {
-                print('Error parsing glucose timestamp: $e');
+                debugPrint('Error parsing glucose timestamp: $e');
               }
             }
           }
@@ -111,25 +103,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     timestamp.isAfter(lastGlucoseTime)) {
                   lastGlucoseTime = timestamp;
                   lastGlucoseValue = injectionData['glucoseValue']?.toString();
-                  print(
+                  debugPrint(
                       'Found injection glucose: $lastGlucoseValue at $lastGlucoseTime');
                 }
               } catch (e) {
-                print('Error parsing injection timestamp: $e');
+                debugPrint('Error parsing injection timestamp: $e');
               }
             }
           }
 
           // Set the most recent glucose value
           _lastGlucose = lastGlucoseValue ?? 'N/A';
-          print('Final glucose value to display: $_lastGlucose');
+          debugPrint('Final glucose value to display: $_lastGlucose');
 
           // Get injection
           if (lastOperations.containsKey('injection')) {
             final injectionData =
                 lastOperations['injection'] as Map<String, dynamic>? ?? {};
             _lastInjection = injectionData['value']?.toString() ?? 'N/A';
-            print('Loaded last injection: $_lastInjection');
+            debugPrint('Loaded last injection: $_lastInjection');
           }
 
           // Get meal
@@ -137,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final mealData =
                 lastOperations['meal'] as Map<String, dynamic>? ?? {};
             _lastMeal = mealData['value']?.toString() ?? 'N/A';
-            print('Loaded last meal: $_lastMeal');
+            debugPrint('Loaded last meal: $_lastMeal');
 
             // Format time
             if (mealData.containsKey('timestamp')) {
@@ -153,47 +145,42 @@ class _HomeScreenState extends State<HomeScreen> {
                 } else {
                   _lastMealTime = '${difference.inDays}d ago';
                 }
-                print('Loaded last meal time: $_lastMealTime');
+                debugPrint('Loaded last meal time: $_lastMealTime');
               } catch (e) {
-                print('Error parsing last meal timestamp: $e');
+                debugPrint('Error parsing last meal timestamp: $e');
                 _lastMealTime = 'Invalid Time';
               }
             } else {
               _lastMealTime = 'N/A';
-              print('Last meal timestamp missing.');
+              debugPrint('Last meal timestamp missing.');
             }
           } else {
-            print('Last meal data missing.');
+            debugPrint('Last meal data missing.');
             _lastMeal = 'N/A';
             _lastMealTime = 'N/A';
           }
 
-          setState(() {
-            _userName = name;
-            print('Home screen state updated with user name.');
-          });
+          if (mounted) {
+            setState(() {
+              _userName = name;
+              debugPrint('Home screen state updated with user name.');
+            });
+          }
         } else {
-          setState(() {
-            _errorMessage = 'User data not found';
-            print('User data document not found.');
-          });
+          debugPrint('User data document not found.');
         }
       } else {
-        setState(() {
-          _errorMessage = 'No user logged in';
-          print('No user logged in.');
-        });
+        debugPrint('No user logged in.');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Error loading user data: $e';
-        print('Error loading user data: $e');
-      });
+      debugPrint('Error loading user data: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-        print('Finished loading user data. isLoading set to false.');
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          debugPrint('Finished loading user data. isLoading set to false.');
+        });
+      }
     }
   }
 
@@ -481,8 +468,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.black.withOpacity(0.25),
-                              Colors.black.withOpacity(0.1),
+                              Colors.black.withValues(alpha: 0.25),
+                              Colors.black.withValues(alpha: 0.1),
                             ],
                           ),
                         ),

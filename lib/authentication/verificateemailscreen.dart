@@ -24,7 +24,7 @@ class _VerificateemailScreenState extends State<VerificateemailScreen> {
   );
   
   bool _isTyping = false;
-  double _buttonScale = 1.0;
+  final double _buttonScale = 1.0;
   bool _isLoading = false;
   bool _isResending = false;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -58,19 +58,21 @@ class _VerificateemailScreenState extends State<VerificateemailScreen> {
     });
 
     try {
-    String code = _controllers.map((c) => c.text).join();
-    if (code.length != 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the complete code')),
-      );
-      return;
-    }
+      String code = _controllers.map((c) => c.text).join();
+      if (code.length != 5) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter the complete code')),
+        );
+        return;
+      }
 
       // Get the stored OTP from Firestore
       final doc = await _firestore
           .collection('password_resets')
           .doc(widget.email)
           .get();
+
+      if (!mounted) return;
 
       if (!doc.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,37 +97,37 @@ class _VerificateemailScreenState extends State<VerificateemailScreen> {
         try {
           await FirebaseAuth.instance.signInWithEmailAndPassword(
             email: widget.email,
-            password: 'temporary_password_placeholder', // Replace with a placeholder or try without if possible
+            password: 'temporary_password_placeholder',
           );
-          // Note: This signInWithEmailAndPassword will likely fail as we don't have the password.
-          // The goal is to potentially refresh the auth state or trigger Firebase checks
-          // that might make updatePassword work in the next screen.
         } catch (e) {
-          // Ignore sign-in errors here, as we are immediately navigating to password reset.
-          print('Temporary sign-in attempt failed: $e');
+          debugPrint('Temporary sign-in attempt failed: $e');
         }
 
         if (!mounted) return;
         // Navigate to new password screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
             builder: (context) => NewPasswordScreen(email: widget.email),
           ),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid OTP. Please try again.')),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -162,20 +164,23 @@ class _VerificateemailScreenState extends State<VerificateemailScreen> {
       // Send email using Gmail SMTP
       final smtpServer = gmail('abdoubench236@gmail.com', 'nrpywckaskmofvcl'); // Replace with your Gmail and app password
       final sendReport = await send(message, smtpServer);
-      print('Message sent: ' + sendReport.toString());
+      debugPrint('Message sent: $sendReport');
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('New OTP has been sent to your email')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending OTP: $e')),
-    );
+      );
     } finally {
-      setState(() {
-        _isResending = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isResending = false;
+        });
+      }
     }
   }
 

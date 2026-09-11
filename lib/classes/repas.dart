@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'ingredient.dart';
 
 class Repas {
@@ -22,7 +23,7 @@ class Repas {
     for (var ingredient in ingredients) {
       totalGlucides += ingredient.quantite100g * quantite / 100;
     }
-    print('Total glucides: $totalGlucides');
+    debugPrint('Total glucides: $totalGlucides');
   }
 
   bool exist() {

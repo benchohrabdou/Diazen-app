@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:diazen/classes/glucose_log.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -90,16 +89,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
         selectedMonth = currentMonth;
       }
 
+      if (!mounted) return;
       setState(() {});
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Error loading history: $e';
       });
-      print('Error loading history: $e');
+      debugPrint('Error loading history: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -134,7 +137,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           continue;
         }
 
-        if (dateStr.isNotEmpty && timestamp != null) {
+        if (dateStr.isNotEmpty) {
           final date = DateFormat('yyyy-MM-dd').parse(dateStr);
           final month = DateFormat('MMMM yyyy').format(date);
 
@@ -228,7 +231,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           continue;
         }
 
-        if (timestamp == null || timeStr == null || units == null || glycemie == null) {
+        if (timeStr == null || units == null || glycemie == null) {
           continue;
         }
 
@@ -267,13 +270,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     List<Map<String, dynamic>> allGlucoseData = [];
     
     // Process data in batches
-    historyData.values.forEach((monthData) {
-      monthData.values.forEach((dayLogs) {
+    for (var monthData in historyData.values) {
+      for (var dayLogs in monthData.values) {
         // Add glucose logs
         allGlucoseData.addAll(dayLogs.where((log) => log['type'] == 'glucose'));
-        
+
         // Add injection glucose values
-        dayLogs.where((log) => log['type'] == 'injection').forEach((injection) {
+        for (var injection in dayLogs.where((log) => log['type'] == 'injection')) {
           if (injection['glycemie'] != null) {
             allGlucoseData.add({
               'type': 'injection_glucose',
@@ -281,9 +284,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               'timestamp': injection['timestamp'],
             });
           }
-        });
-      });
-    });
+        }
+      }
+    }
 
     if (allGlucoseData.isEmpty) {
       _minTimestamp = 0;
@@ -422,7 +425,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final months = allMonths;
     if (selectedMonth == null) {
       return const Scaffold(
         body: Center(
@@ -576,13 +578,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     belowBarData: BarAreaData(
                                       show: true,
                                       color: const Color(0xFF4A7BF7)
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                     ),
                                   ),
                                 ],
                                 lineTouchData: LineTouchData(
                                   touchTooltipData: LineTouchTooltipData(
-                                    tooltipBgColor: Colors.blueGrey.withOpacity(0.8),
+                                    tooltipBgColor: Colors.blueGrey.withValues(alpha: 0.8),
                                     getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                                       return touchedBarSpots.map((barSpot) {
                                         final date = DateTime.fromMillisecondsSinceEpoch(barSpot.x.toInt());

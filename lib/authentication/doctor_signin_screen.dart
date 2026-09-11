@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:diazen/screens/doctor_home_screen.dart';
 
 class DoctorSigninScreen extends StatefulWidget {
-  const DoctorSigninScreen({Key? key}) : super(key: key);
+  const DoctorSigninScreen({super.key});
 
   @override
   State<DoctorSigninScreen> createState() => _DoctorSigninScreenState();
@@ -115,6 +115,7 @@ class _DoctorSigninScreenState extends State<DoctorSigninScreen> {
 
                     if (query.docs.isNotEmpty) {
                       final docId = query.docs.first.id;
+                      if (!context.mounted) return;
                       Navigator.of(context).pop();
                       showDialog(
                         context: context,

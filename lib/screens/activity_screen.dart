@@ -9,7 +9,7 @@ import 'dart:async';
 import 'package:intl/intl.dart';
 
 class ActivityScreen extends StatefulWidget {
-  const ActivityScreen({Key? key}) : super(key: key);
+  const ActivityScreen({super.key});
 
   @override
   State<ActivityScreen> createState() => _ActivityScreenState();
@@ -371,8 +371,9 @@ class _ActivityScreenState extends State<ActivityScreen>
               .collection('activities')
               .add(activityData);
 
-          print('Activity saved successfully to Firestore');
+          debugPrint('Activity saved successfully to Firestore');
 
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -392,13 +393,14 @@ class _ActivityScreenState extends State<ActivityScreen>
           // Add a small delay before refreshing
           await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted) {
-            print('Reloading activity history after save');
+            debugPrint('Reloading activity history after save');
             _loadActivityHistory();
           }
         }
       } catch (e) {
-        print('Error saving activity: $e');
-        print('Stack trace: ${StackTrace.current}');
+        debugPrint('Error saving activity: $e');
+        debugPrint('Stack trace: ${StackTrace.current}');
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -716,7 +718,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                                                   boxShadow: [
                                                     BoxShadow(
                                                       color: Colors.black
-                                                          .withOpacity(0.1),
+                                                          .withValues(alpha: 0.1),
                                                       blurRadius: 4,
                                                       offset:
                                                           const Offset(0, 2),
@@ -826,7 +828,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                                                                           .delete();
                                                                       // Refresh the activity history
                                                                       _loadActivityHistory();
-                                                                      if (mounted) {
+                                                                      if (context.mounted) {
                                                                         ScaffoldMessenger.of(context)
                                                                             .showSnackBar(
                                                                           const SnackBar(
@@ -841,7 +843,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                                                                         );
                                                                       }
                                                                     } catch (e) {
-                                                                      if (mounted) {
+                                                                      if (context.mounted) {
                                                                         ScaffoldMessenger.of(context)
                                                                             .showSnackBar(
                                                                           SnackBar(
@@ -948,7 +950,7 @@ class _ActivityScreenState extends State<ActivityScreen>
                                       final commonActivities =
                                           await _activityApiService
                                               .getCommonActivities();
-                                      if (!mounted) return;
+                                      if (!context.mounted) return;
                                       showDialog(
                                         context: context,
                                         builder: (context) => AlertDialog(

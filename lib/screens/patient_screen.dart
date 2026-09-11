@@ -5,7 +5,7 @@ import 'package:diazen/screens/rapport_screen.dart';
 class PatientScreen extends StatefulWidget {
   final String patientId; // Correction : recevoir l'ID du patient
 
-  const PatientScreen({Key? key, required this.patientId}) : super(key: key);
+  const PatientScreen({super.key, required this.patientId});
 
   @override
   State<PatientScreen> createState() => _PatientScreenState();
@@ -14,10 +14,6 @@ class PatientScreen extends StatefulWidget {
 class _PatientScreenState extends State<PatientScreen> {
   Map<String, dynamic>? _patientData; // Pour stocker les données du patient
   bool _isLoading = true; // Pour gérer l'état de chargement
-
-  // Données historiques du patient
-  List<Map<String, dynamic>> _glucoseLogs = [];
-  List<Map<String, dynamic>> _injections = [];
 
   // Variables pour l'édition de la Sensitivité à l'Insuline
   bool _isSensitiviteEditing = false;
@@ -37,7 +33,6 @@ class _PatientScreenState extends State<PatientScreen> {
   void initState() {
     super.initState();
     _loadPatientData(); // Charger les données du patient au démarrage
-    _loadPatientHistory(); // Charger l'historique du patient
   }
 
   @override
@@ -103,52 +98,26 @@ class _PatientScreenState extends State<PatientScreen> {
           }
         });
       } else {
-        setState(() {
-          _patientData = {};
-        });
-        print('Patient document with ID ${widget.patientId} does not exist.');
+        if (mounted) {
+          setState(() {
+            _patientData = {};
+          });
+        }
+        debugPrint('Patient document with ID ${widget.patientId} does not exist.');
       }
     } catch (e) {
-      setState(() {
-        _patientData = {}; // Set to empty to indicate loading failed
-      });
-      print('Error loading patient data for ID ${widget.patientId}: $e');
-      // You might want to show a user-friendly error message here too
+      if (mounted) {
+        setState(() {
+          _patientData = {}; // Set to empty to indicate loading failed
+        });
+      }
+      debugPrint('Error loading patient data for ID ${widget.patientId}: $e');
     } finally {
-      // We won't set isLoading to false here, as we also need to load history
-    }
-  }
-
-  Future<void> _loadPatientHistory() async {
-    final patientId = widget.patientId;
-    if (patientId.isEmpty) return;
-
-    try {
-      // Load Glucose Logs
-      final glucoseSnapshot = await FirebaseFirestore.instance
-          .collection('glucose_logs')
-          .where('userId', isEqualTo: patientId)
-          .orderBy('timestamp', descending: true)
-          .limit(50) // Limit for performance
-          .get();
-      _glucoseLogs = glucoseSnapshot.docs.map((doc) => doc.data()).toList();
-
-      // Load Injections (containing doseInsuline and glycemie at injection)
-      final injectionSnapshot = await FirebaseFirestore.instance
-          .collection('injections')
-          .where('userId', isEqualTo: patientId)
-          .orderBy('timestamp', descending: true)
-          .limit(50) // Limit for performance
-          .get();
-      _injections = injectionSnapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
-      print('Error loading patient history: $e');
-      // Show an error message
-    } finally {
-      setState(() {
-        _isLoading =
-            false; // Set loading to false after both loads are complete
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -170,20 +139,26 @@ class _PatientScreenState extends State<PatientScreen> {
             .collection('users')
             .doc(widget.patientId)
             .update({'sensitiviteInsuline': newValue});
-        setState(() {
-          _patientData!['sensitiviteInsuline'] = newValue;
-          _isSensitiviteEditing = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Sensitivité à l\'insuline sauvegardée.')));
+        if (mounted) {
+          setState(() {
+            _patientData!['sensitiviteInsuline'] = newValue;
+            _isSensitiviteEditing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Sensitivité à l\'insuline sauvegardée.')));
+        }
       } catch (e) {
-        print('Error saving sensitivite for ID ${widget.patientId}: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erreur lors de la sauvegarde.')));
+        debugPrint('Error saving sensitivite for ID ${widget.patientId}: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Erreur lors de la sauvegarde.')));
+        }
       }
     } else {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Valeur invalide. Veuillez entrer un nombre valide pour la sensitivité à l\'insuline.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Valeur invalide. Veuillez entrer un nombre valide pour la sensitivité à l\'insuline.')));
+      }
     }
   }
 
@@ -204,24 +179,32 @@ class _PatientScreenState extends State<PatientScreen> {
             .collection('users')
             .doc(widget.patientId)
             .update({'ratioInsulineGlucide': newValue});
-        setState(() {
-          _patientData!['ratioInsulineGlucide'] = newValue; // Update local state immediately
-          _isRICREditing = false;
-        });
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('ICR sauvegardé.')));
+        if (mounted) {
+          setState(() {
+            _patientData!['ratioInsulineGlucide'] = newValue; // Update local state immediately
+            _isRICREditing = false;
+          });
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('ICR sauvegardé.')));
+        }
       } catch (e) {
-        print('Error saving ICR for ID ${widget.patientId}: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Erreur lors de la sauvegarde.')));
+        debugPrint('Error saving ICR for ID ${widget.patientId}: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Erreur lors de la sauvegarde.')));
+        }
       }
     } else if (newValue != null && newValue <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Valeur invalide. L\'ICR doit être supérieur à 0.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Valeur invalide. L\'ICR doit être supérieur à 0.')));
+      }
     } else {
       // Handle case where input is not a valid number
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Veuillez entrer un nombre valide pour l\'ICR.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Veuillez entrer un nombre valide pour l\'ICR.')));
+      }
     }
   }
 
@@ -243,17 +226,23 @@ class _PatientScreenState extends State<PatientScreen> {
             .collection('users')
             .doc(widget.patientId)
             .update({'targetGlucose': newValue});
-        setState(() {
-          _patientData!['targetGlucose'] = newValue;
-          _isTargetGlucoseEditing = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Objectif de glycémie sauvegardé.')));
+        if (mounted) {
+          setState(() {
+            _patientData!['targetGlucose'] = newValue;
+            _isTargetGlucoseEditing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Objectif de glycémie sauvegardé.')));
+        }
       } catch (e) {
-        print('Error saving target glucose for ID ${widget.patientId}: $e');
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de la sauvegarde.')));
+        debugPrint('Error saving target glucose for ID ${widget.patientId}: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erreur lors de la sauvegarde.')));
+        }
       }
     } else {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Valeur invalide. Veuillez entrer un nombre valide pour l\'objectif de glycémie.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Valeur invalide. Veuillez entrer un nombre valide pour l\'objectif de glycémie.')));
+      }
     }
   }
 
@@ -267,7 +256,7 @@ class _PatientScreenState extends State<PatientScreen> {
       patientPhone = _patientData!['tel'] ?? ''; // Get phone number
       patientName = '';
       if (prenom.isNotEmpty) patientName += prenom;
-      if (nom.isNotEmpty) patientName += ' ' + nom;
+      if (nom.isNotEmpty) patientName += ' $nom';
       if (patientName.isEmpty) patientName = 'Patient';
     } else if (!_isLoading && _patientData == null) {
       patientName = 'Patient Not Found';
@@ -298,7 +287,6 @@ class _PatientScreenState extends State<PatientScreen> {
                 ? null
                 : () {
                     _loadPatientData();
-                    _loadPatientHistory();
                   }, // Refresh data on button press
           ),
         ],

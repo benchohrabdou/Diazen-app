@@ -32,24 +32,24 @@ class Injection {
 
     // 1. Calculate carbohydrate coverage
     double mealDose = glucides / ratioInsulineGlucide;
-    print('Meal dose: $mealDose units (${glucides}g / $ratioInsulineGlucide)');
+    debugPrint('Meal dose: $mealDose units (${glucides}g / $ratioInsulineGlucide)');
 
     // 2. Calculate correction dose
     double correctionDose = (glycemie - glycemieCible) / sensitiviteInsuline;
-    print(
-        'Correction dose: $correctionDose units ((${glycemie} - ${glycemieCible}) / $sensitiviteInsuline)');
+    debugPrint(
+        'Correction dose: $correctionDose units (($glycemie - $glycemieCible) / $sensitiviteInsuline)');
 
     // 3. Apply activity reduction if applicable
     double totalDose = mealDose + correctionDose;
-    print('Total dose before activity adjustment: $totalDose units');
+    debugPrint('Total dose before activity adjustment: $totalDose units');
 
     if (activityFactor > 0) {
       double reduction = totalDose * activityFactor;
       totalDose = totalDose - reduction;
-      print('Activity reduction: $reduction units (${activityFactor * 100}%)');
+      debugPrint('Activity reduction: $reduction units (${activityFactor * 100}%)');
     }
 
-    print('Final calculated dose: $totalDose units');
+    debugPrint('Final calculated dose: $totalDose units');
 
     // 4. Ensure dose is not negative
     return totalDose.clamp(0, double.infinity);
@@ -76,8 +76,8 @@ class Injection {
       // Add to Firestore using toJson method
       await firestore.collection('injections').add(toJson());
     } catch (e) {
-      print('Error saving injection to Firestore: $e');
-      throw e;
+      debugPrint('Error saving injection to Firestore: $e');
+      rethrow;
     }
   }
 

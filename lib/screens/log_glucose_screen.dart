@@ -187,7 +187,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
 
       // Save glucose log data to Firestore
       await _firestoreService.addDocument('glucose_logs', glucoseData);
-      print('Glucose log saved successfully');
+      debugPrint('Glucose log saved successfully');
 
       // Update last operations in user document
       await FirebaseFirestore.instance
@@ -201,8 +201,9 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
           }
         }
       }, SetOptions(merge: true)); // Use merge: true to avoid overwriting other fields
-      print('User last operations updated successfully');
+      debugPrint('User last operations updated successfully');
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Glucose log saved successfully')),
       );
@@ -210,13 +211,17 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       // Navigate back
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving glucose log: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving glucose log: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
