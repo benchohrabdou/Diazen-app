@@ -33,7 +33,9 @@
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+  - [Configuration](#configuration)
   - [Firebase Configuration](#firebase-configuration)
+  - [Running the Application](#running-the-application)
 - [Medical Disclaimer](#medical-disclaimer)
 - [Roadmap](#roadmap)
 
@@ -62,6 +64,7 @@ Calculating a prandial insulin dose requires factoring in:
   - Configured **ICR** and **ISF** values
 - Dynamic activity compensation: applies dose reductions for planned and spontaneous physical exercise based on intensity, duration, and calories burned.
 - Breakdown of calculated doses: **meal dose**, **correction dose**, and **activity adjustment**.
+- Safety protections: blocks computation if blood glucose is below 70 mg/dL with a warning, and validates glucose (20–600 mg/dL) and carbohydrate ranges (0–300 g).
 
 ### 2. Meal & Carbohydrate Tracking
 - Food and meal database with nutritional estimation.
@@ -82,11 +85,11 @@ Calculating a prandial insulin dose requires factoring in:
 ### 5. Doctor & Healthcare Provider Portal
 - Dedicated interfaces for patients and healthcare professionals.
 - Practitioner view to review patient glycemic history, dose logs, and metabolic parameters.
-- Structured medical summary reports (PDF / Email) for clinical follow-up.
+- Clinical report dashboard with summary statistics and glycemic charts (*PDF and email report export is planned*).
 
 ### 6. Authentication & User Profiles
 - User account management powered by **Firebase Authentication**.
-- Authentication via Email/Password (with verification) and OAuth providers (Google, Apple, Facebook).
+- Authentication via Email/Password (with verification) and Google Sign-In (*Apple Sign-In is planned*).
 - Profile setup for medical baseline values (target glucose, ICR, ISF, and physician contacts).
 
 ---
@@ -112,13 +115,13 @@ Calculating a prandial insulin dose requires factoring in:
 | Domain | Technology / Library | Description |
 |---|---|---|
 | **Framework** | [Flutter](https://flutter.dev) (Dart 3.5+) | Cross-platform mobile development (Android & iOS) |
-| **Backend & Cloud** | [Cloud Firestore](https://firebase.google.com/docs/firestore) | Real-time NoSQL cloud database |
-| **Authentication** | [Firebase Auth](https://firebase.google.com/docs/auth) | Email/Password, Google Sign-In, Apple, Facebook |
-| **Cloud Storage** | [Firebase Storage](https://firebase.google.com/docs/storage) | Media and document storage |
-| **Local Storage** | [Hive](https://pub.dev/packages/hive) & [Shared Preferences](https://pub.dev/packages/shared_preferences) | Local caching and offline preferences |
-| **Data Visualization** | [FL Chart](https://pub.dev/packages/fl_chart) | Glycemic trends and charts |
+| **Backend & Database** | [Cloud Firestore](https://firebase.google.com/docs/firestore) | Real-time NoSQL cloud database |
+| **Authentication** | [Firebase Auth](https://firebase.google.com/docs/auth) | Email/Password, Google Sign-In (*Apple Sign-In planned*) |
+| **Cloud Storage** | Firebase Storage | *(Planned)* Media and document storage |
+| **Local Storage** | [Shared Preferences](https://pub.dev/packages/shared_preferences) | Local caching and user preferences (*Hive caching planned*) |
+| **Data Visualization** | [FL Chart](https://pub.dev/packages/fl_chart) | Dynamic glycemic trend charts |
 | **UI Components** | Lucide Icons, Google Nav Bar, Cupertino Icons | Interface styling and navigation |
-| **Networking & Services** | HTTP & Mailer | Nutrition API integration and medical report dispatch |
+| **Networking & Services** | HTTP | Nutrition and activity API integration (*PDF/email export planned*) |
 
 ---
 
@@ -132,20 +135,20 @@ lib/
 │   ├── loginpage.dart           # Patient login screen
 │   ├── signuppage.dart          # Patient registration screen
 │   ├── medical_info_form.dart   # Baseline parameters setup (ICR, ISF)
-│   ├── social_auth_service.dart # Google / Apple / Facebook OAuth
+│   ├── social_auth_service.dart # OAuth services
 │   └── ...
 ├── classes/                     # Data models & Firestore operations
 │   ├── activite.dart            # Activity data model
 │   ├── firestore_ops.dart       # Centralized Firestore CRUD operations
 │   ├── glucose_log.dart         # Blood glucose measurement entity
 │   ├── ingredient.dart          # Ingredient & carb breakdown
-│   ├── injection.dart           # Insulin injection entity & calculations
+│   ├── injection.dart           # Insulin injection entity
 │   ├── medecin.dart             # Practitioner profile model
 │   ├── repas.dart               # Meal entity
 │   └── utilisateur.dart         # Patient profile model
 ├── screens/                     # Core application views
 │   ├── home_screen.dart         # Main patient dashboard
-│   ├── calculate_dose_screen.dart# Interactive FIT dose calculation engine
+│   ├── calculate_dose_screen.dart# Interactive dose calculation screen
 │   ├── dose_result_screen.dart  # Detailed dose calculation summary
 │   ├── log_glucose_screen.dart  # Glucose measurement input screen
 │   ├── add_plate_screen.dart    # Meal & carb composition
@@ -154,8 +157,10 @@ lib/
 │   ├── history_screen.dart      # Logbook of meals, doses, and glucose
 │   ├── doctor_home_screen.dart  # Medical practitioner dashboard
 │   ├── patient_screen.dart      # Detailed patient view for doctors
-│   ├── rapport_screen.dart      # Clinical report generation & export
+│   ├── rapport_screen.dart      # Clinical report and statistics screen
 │   └── ...
+├── services/                    # Business logic & computation services
+│   └── dose_calculator.dart     # Pure Functional Insulin Therapy (FIT) dose engine
 ├── firebase_options.dart        # Platform-specific Firebase credentials
 └── main.dart                    # Application bootstrap & theme setup
 ```
@@ -190,6 +195,28 @@ Ensure the following tools are installed:
    flutter doctor
    ```
 
+### Configuration
+
+API keys for external nutrition and physical activity services are loaded at build time via `--dart-define` using `String.fromEnvironment`. Never commit real API keys to any repository file.
+
+Pass the keys as build arguments:
+
+```bash
+# Debug mode
+flutter run \
+  --dart-define=USDA_API_KEY=your_usda_key \
+  --dart-define=API_NINJAS_KEY=your_api_ninjas_key
+
+# Release build
+flutter build apk \
+  --dart-define=USDA_API_KEY=your_usda_key \
+  --dart-define=API_NINJAS_KEY=your_api_ninjas_key
+```
+
+Supported build variables:
+- `USDA_API_KEY`: API key for USDA FoodData Central nutritional food search.
+- `API_NINJAS_KEY`: API key for API Ninjas calories burned service.
+
 ### Firebase Configuration
 
 To configure with your own Firebase project:
@@ -202,18 +229,22 @@ To configure with your own Firebase project:
    ```bash
    flutterfire configure
    ```
-3. Enable **Authentication**, **Cloud Firestore**, and **Firebase Storage** in the Firebase Console.
+3. Enable **Authentication** (Email/Password, Google) and **Cloud Firestore** in the Firebase Console.
 
 ### Running the Application
 
 Connect a physical device or launch an emulator:
 
 ```bash
-# Debug mode
-flutter run
+# Debug mode with API keys
+flutter run \
+  --dart-define=USDA_API_KEY=your_usda_key \
+  --dart-define=API_NINJAS_KEY=your_api_ninjas_key
 
 # Release mode
-flutter run --release
+flutter run --release \
+  --dart-define=USDA_API_KEY=your_usda_key \
+  --dart-define=API_NINJAS_KEY=your_api_ninjas_key
 ```
 
 ---
@@ -231,5 +262,10 @@ flutter run --release
 - [ ] **Continuous Glucose Monitor (CGM) Integration**: Bluetooth synchronization with Dexcom and FreeStyle Libre sensors.
 - [ ] **Computer Vision Meal Recognition**: Automated carbohydrate estimation via camera.
 - [ ] **Smartwatch Companion App**: WearOS and watchOS companion for quick bolus logging.
+- [ ] **Apple Sign-In**: Native OAuth sign-in flow for iOS users.
+- [ ] **PDF & Email Report Export**: Export clinical summaries to PDF and dispatch via email.
+- [ ] **Offline Caching**: Offline-first storage and synchronization with Hive.
+- [ ] **Firebase Storage Integration**: Cloud storage for medical documentation and profile assets.
 - [ ] **Multi-Language Support**: Complete French and English localization.
+
 

@@ -3,6 +3,7 @@ import 'package:diazen/classes/injection.dart';
 import 'package:diazen/screens/activity_screen.dart';
 import 'package:diazen/screens/add_plate_screen.dart';
 import 'package:diazen/screens/dose_result_screen.dart';
+import 'package:diazen/services/dose_calculator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -208,105 +209,6 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
         _isLoadingMeals = false;
       });
     }
-  }
-
-  double getReductionPercentFromCalories(double totalCalories) {
-    if (totalCalories <= 50) return 5;
-    if (totalCalories <= 100) return 10;
-    if (totalCalories <= 150) return 15;
-    if (totalCalories <= 200) return 20;
-    if (totalCalories <= 250) return 25;
-    if (totalCalories <= 300) return 30;
-    if (totalCalories <= 400) return 35;
-    if (totalCalories <= 500) return 40;
-    if (totalCalories <= 600) return 50;
-    return 60;
-  }
-
-  double calculateDose(double glucose, double carbs) {
-    if (_isLoadingPatientMedicalInfo || icr <= 0 || isf <= 0) {
-      throw Exception(
-          'Medical information not loaded or invalid. Cannot calculate dose.');
-    }
-
-    double mealDose = carbs / icr;
-    print('Meal dose: $mealDose units (${carbs}g / $icr)');
-
-    double correctionDose = (glucose - targetGlucose) / isf;
-    print(
-        'Correction dose: $correctionDose units (($glucose - $targetGlucose) / $isf)');
-
-    double totalDose = mealDose + correctionDose;
-    print('Total dose before activity adjustment: $totalDose units');
-
-    double totalActivityReduction = 0.0;
-    lastUnplannedReductionUnits = 0.0;
-    lastUnplannedReductionPercent = 0.0;
-    lastPlannedReductionUnits = 0.0;
-    lastPlannedReductionPercent = 0.0;
-
-    double reductionPercent = 0.0;
-    double totalCalories = 0.0;
-    if (unplannedActivity) {
-      totalCalories = selectedUnplannedActivityCalories *
-          (selectedUnplannedActivityDuration / 30.0);
-      double intensityFactor = 1.0;
-      switch (unplannedActivityIntensity) {
-        case 'light':
-          intensityFactor = 0.8;
-          break;
-        case 'moderate':
-          intensityFactor = 1.0;
-          break;
-        case 'vigorous':
-          intensityFactor = 1.2;
-          break;
-        case 'intense':
-          intensityFactor = 1.4;
-          break;
-        default:
-          intensityFactor = 1.0;
-      }
-      totalCalories *= intensityFactor;
-      reductionPercent = getReductionPercentFromCalories(totalCalories);
-      lastUnplannedReductionPercent = reductionPercent;
-      lastUnplannedReductionUnits = totalDose * (reductionPercent / 100.0);
-      totalActivityReduction += lastUnplannedReductionUnits;
-      print(
-          'Unplanned activity: ${totalCalories.toStringAsFixed(0)} kcal, reduction: $reductionPercent%');
-    }
-    if (plannedActivity) {
-      totalCalories = selectedPlannedActivityCalories *
-          (selectedPlannedActivityDuration / 30.0);
-      double intensityFactor = 1.0;
-      switch (plannedActivityIntensity) {
-        case 'light':
-          intensityFactor = 0.8;
-          break;
-        case 'moderate':
-          intensityFactor = 1.0;
-          break;
-        case 'vigorous':
-          intensityFactor = 1.2;
-          break;
-        case 'intense':
-          intensityFactor = 1.4;
-          break;
-        default:
-          intensityFactor = 1.0;
-      }
-      totalCalories *= intensityFactor;
-      reductionPercent = getReductionPercentFromCalories(totalCalories);
-      lastPlannedReductionPercent = reductionPercent;
-      lastPlannedReductionUnits = totalDose * (reductionPercent / 100.0);
-      totalActivityReduction += lastPlannedReductionUnits;
-      print(
-          'Planned activity: ${totalCalories.toStringAsFixed(0)} kcal, reduction: $reductionPercent%');
-    }
-
-    totalDose = totalDose - totalActivityReduction;
-    print('Final calculated dose: $totalDose units');
-    return totalDose.clamp(0, double.infinity);
   }
 
   Future<Map<String, dynamic>> getMealData(String mealName) async {
@@ -1059,6 +961,61 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
 
     final glucose = double.parse(glucoseText);
 
+    // Safety: reject glucose outside 20-600 mg/dL
+    if (glucose < 20 || glucose > 600) {
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Blood glucose must be between 20 and 600 mg/dL.",
+            style: TextStyle(fontFamily: 'SfProDisplay'),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Safety: blocking warning if glucose < 70 mg/dL (do not show a dose)
+    if (glucose < 70) {
+      setState(() => _isSaving = false);
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Warning',
+            style: TextStyle(
+              fontFamily: 'SfProDisplay',
+              fontWeight: FontWeight.bold,
+              color: Colors.redAccent,
+            ),
+          ),
+          content: const Text(
+            'Treat the low first and recheck before taking insulin',
+            style: TextStyle(fontFamily: 'SfProDisplay', fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  fontFamily: 'SfProDisplay',
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     double carbs = 0;
     if (_selectedMeal != null) {
       carbs = _selectedMeal!['carbs'] as double;
@@ -1125,12 +1082,13 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
                 TextButton(
                   onPressed: () {
                     final carbs = double.tryParse(carbsController.text);
-                    if (carbs != null && carbs > 0) {
+                    if (carbs != null && carbs >= 0 && carbs <= 300) {
                       Navigator.pop(context, carbs);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Please enter a valid carb value'),
+                          content: Text(
+                              'Please enter a valid carb value (0 - 300 g)'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -1159,10 +1117,50 @@ class _CalculateDoseScreenState extends State<CalculateDoseScreen> {
     print(
         'Final carbohydrates for calculation: $adjustedCarbs g (Base: $carbs g * Quantity: $_mealQuantity)');
 
-    final dose = calculateDose(glucose, adjustedCarbs);
+    // Safety: reject carbs outside 0-300 g
+    if (adjustedCarbs < 0 || adjustedCarbs > 300) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Carbohydrates must be between 0 and 300 g.",
+            style: TextStyle(fontFamily: 'SfProDisplay'),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    final mealDose = adjustedCarbs / icr;
-    final correctionDose = (glucose - targetGlucose) / isf;
+    final doseResult = calculateDose(
+      glucose: glucose,
+      carbs: adjustedCarbs,
+      icr: icr,
+      isf: isf,
+      targetGlucose: targetGlucose,
+      unplannedActivity: unplannedActivity,
+      unplannedCalories: selectedUnplannedActivityCalories,
+      unplannedDuration: selectedUnplannedActivityDuration,
+      unplannedIntensity: unplannedActivityIntensity,
+      plannedActivity: plannedActivity,
+      plannedCalories: selectedPlannedActivityCalories,
+      plannedDuration: selectedPlannedActivityDuration,
+      plannedIntensity: plannedActivityIntensity,
+    );
+
+    final dose = doseResult.totalDose;
+    final mealDose = doseResult.mealDose;
+    final correctionDose = doseResult.correctionDose;
+    lastUnplannedReductionUnits = doseResult.unplannedReductionUnits;
+    lastUnplannedReductionPercent = doseResult.unplannedReductionPercent;
+    lastPlannedReductionUnits = doseResult.plannedReductionUnits;
+    lastPlannedReductionPercent = doseResult.plannedReductionPercent;
+    _calculatedUnplannedActivityCalories =
+        doseResult.unplannedActivityCalories;
+    _calculatedPlannedActivityCalories =
+        doseResult.plannedActivityCalories;
 
     double effectiveActivityReduction = 0.0;
     if (unplannedActivity) {

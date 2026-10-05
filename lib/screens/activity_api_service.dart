@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ActivityApiService {
-  // API Ninjas - Calories Burned API with your provided key
-  static const String apiKey = 'f5d5/ze7MD0gJKqP1OEthg==k4lqw6qODeob6i6o';
+  // API Ninjas Calories Burned API key loaded at build time via --dart-define
+  static const String apiKey = String.fromEnvironment('API_NINJAS_KEY',
+      defaultValue: String.fromEnvironment('API_NINJAS_API_KEY'));
   static const String baseUrl = 'https://api.api-ninjas.com/v1/caloriesburned';
 
   // Fetch calories burned for an activity with retry logic

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:diazen/authentication/verificateemailscreen.dart'; // Removed as per new flow
-// import 'package:mailer/mailer.dart'; // Removed as per new flow
-// import 'package:mailer/smtp_server.dart'; // Removed as per new flow
 
 class ForgotpassScreen extends StatefulWidget {
   const ForgotpassScreen({super.key});
@@ -18,7 +15,6 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
   double _borderWidth = 0;
   double _buttonScale = 1.0;
   bool _isLoading = false;
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Removed as per new flow
 
   @override
   void initState() {
@@ -38,45 +34,6 @@ class _ForgotpassScreenState extends State<ForgotpassScreen> {
     _emailController.dispose();
     super.dispose();
   }
-
-  // Removed custom OTP generation and sending logic
-  /*
-  String _generateOTP() {
-    // Generate a 5-digit OTP
-    return (10000 + (DateTime.now().millisecondsSinceEpoch % 90000)).toString();
-  }
-
-  Future<void> _sendOTP(String email, String otp) async {
-    // Store OTP in Firestore with expiration
-    await _firestore.collection('password_resets').doc(email).set({
-      'otp': otp,
-      'timestamp': FieldValue.serverTimestamp(),
-      'expiresAt': FieldValue.serverTimestamp(),
-    });
-
-    // Create email message
-    final message = Message()
-      ..from = Address('abdoubench236@gmail.com')
-      ..recipients.add(email)
-      ..subject = 'Diazen Password Reset OTP'
-      ..html = '''
-        <h1>Password Reset OTP</h1>
-        <p>Your OTP for password reset is: <strong>$otp</strong></p>
-        <p>This OTP will expire in 5 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      ''';
-
-    try {
-      // Send email using Gmail SMTP
-      final smtpServer = gmail('abdoubench236@gmail.com', 'nrpywckaskmofvcl');
-      final sendReport = await send(message, smtpServer);
-      print('Message sent: ' + sendReport.toString());
-    } catch (e) {
-      print('Error sending email: $e');
-      throw Exception('Failed to send OTP email');
-    }
-  }
-  */
 
   void _onResetPressed() async {
     setState(() {

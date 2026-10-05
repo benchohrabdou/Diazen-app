@@ -22,39 +22,6 @@ class Injection {
     this.activityReduction = 0.0,
   });
 
-  double calculerDose(Map<String, dynamic> inputs) {
-    double glycemie = inputs['glycemie'] ?? 0.0;
-    double glucides = inputs['glucides'] ?? 0.0;
-    double glycemieCible = inputs['glycemieCible'] ?? 100.0;
-    double ratioInsulineGlucide = inputs['ratioInsulineGlucide'] ?? 10.0;
-    double sensitiviteInsuline = inputs['sensitiviteInsuline'] ?? 50.0;
-    double activityFactor = inputs['activityFactor'] ?? 0.0;
-
-    // 1. Calculate carbohydrate coverage
-    double mealDose = glucides / ratioInsulineGlucide;
-    debugPrint('Meal dose: $mealDose units (${glucides}g / $ratioInsulineGlucide)');
-
-    // 2. Calculate correction dose
-    double correctionDose = (glycemie - glycemieCible) / sensitiviteInsuline;
-    debugPrint(
-        'Correction dose: $correctionDose units (($glycemie - $glycemieCible) / $sensitiviteInsuline)');
-
-    // 3. Apply activity reduction if applicable
-    double totalDose = mealDose + correctionDose;
-    debugPrint('Total dose before activity adjustment: $totalDose units');
-
-    if (activityFactor > 0) {
-      double reduction = totalDose * activityFactor;
-      totalDose = totalDose - reduction;
-      debugPrint('Activity reduction: $reduction units (${activityFactor * 100}%)');
-    }
-
-    debugPrint('Final calculated dose: $totalDose units');
-
-    // 4. Ensure dose is not negative
-    return totalDose.clamp(0, double.infinity);
-  }
-
   Map<String, dynamic> toJson() {
     return {
       'tempsInject':

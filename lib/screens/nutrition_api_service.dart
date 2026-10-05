@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class NutritionApiService {
-  // USDA FoodData Central API with your provided key
-  static const String apiKey = 'hQYP1XW3wilXeIcwcONXnskV7NPKAmHWQvmVOIuc';
+  // USDA FoodData Central API key loaded at build time via --dart-define
+  static const String apiKey = String.fromEnvironment('USDA_API_KEY');
   static const String baseUrl = 'https://api.nal.usda.gov/fdc/v1';
 
   // Search for food items

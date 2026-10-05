@@ -162,7 +162,7 @@ class _VerificateemailScreenState extends State<VerificateemailScreen> {
         ''';
 
       // Send email using Gmail SMTP
-      final smtpServer = gmail('abdoubench236@gmail.com', 'nrpywckaskmofvcl'); // Replace with your Gmail and app password
+      final smtpServer = gmail('abdoubench236@gmail.com', const String.fromEnvironment('GMAIL_APP_PASSWORD'));
       final sendReport = await send(message, smtpServer);
       debugPrint('Message sent: $sendReport');
 
