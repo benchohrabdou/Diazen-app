@@ -1,7 +1,7 @@
 <div align="center">
 
-  # 🩺 DIAZEN
-  ### *Smart Companion for Functional Insulin Therapy (FIT)*
+  # DIAZEN
+  ### Smart Companion for Functional Insulin Therapy (FIT)
 
   [![Flutter](https://img.shields.io/badge/Flutter-3.5+-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
   [![Dart](https://img.shields.io/badge/Dart-3.5+-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -10,93 +10,88 @@
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
   <p align="center">
-    <b>A mobile e-health application designed to simplify diabetes daily management through Functional Insulin Therapy (FIT / ITF), offering precise prandial dose calculation, nutrition & activity tracking, and practitioner oversight.</b>
-  </p>
-
-  <p align="center">
-    <i>Developed as a Bachelor's final-year capstone project & architectural blueprint for an e-health startup solution.</i>
+    A mobile application designed for diabetes self-management through Functional Insulin Therapy (FIT / ITF), offering prandial dose calculation, carbohydrate and activity tracking, and practitioner oversight.
   </p>
 
 </div>
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
-- [Overview](#-overview)
-- [Key Features](#-key-features)
+- [Overview](#overview)
+- [Key Features](#key-features)
   - [Prandial Insulin Dose Calculator (FIT)](#1-prandial-insulin-dose-calculator-fit)
   - [Meal & Carbohydrate Tracking](#2-meal--carbohydrate-tracking)
   - [Blood Glucose Monitoring & Trends](#3-blood-glucose-monitoring--trends)
   - [Physical Activity Logging](#4-physical-activity-logging)
   - [Doctor & Healthcare Provider Portal](#5-doctor--healthcare-provider-portal)
   - [Authentication & User Profiles](#6-authentication--user-profiles)
-- [Screenshots](#-screenshots)
-- [System Architecture & Tech Stack](#-system-architecture--tech-stack)
-- [Project Directory Structure](#-project-directory-structure)
-- [Getting Started](#-getting-started)
+- [Screenshots](#screenshots)
+- [System Architecture & Tech Stack](#system-architecture--tech-stack)
+- [Project Directory Structure](#project-directory-structure)
+- [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
   - [Firebase Configuration](#firebase-configuration)
-- [Medical Disclaimer](#-medical-disclaimer)
-- [Roadmap](#-roadmap)
-- [Author & Acknowledgments](#-author--acknowledgments)
+- [Medical Disclaimer](#medical-disclaimer)
+- [Roadmap](#roadmap)
 
 ---
 
-## 🌟 Overview
+## Overview
 
-Living with **Type 1 Diabetes** (or insulin-requiring diabetes) is a continuous balancing act. **Functional Insulin Therapy (FIT / Insulinothérapie Fonctionnelle - ITF)** empowers patients to adapt their rapid-acting insulin doses to their actual meals and lifestyle rather than adhering to rigid dietary constraints.
+Managing Type 1 Diabetes (or insulin-requiring diabetes) requires continuous monitoring and multi-variable arithmetic. **Functional Insulin Therapy (FIT / Insulinothérapie Fonctionnelle - ITF)** allows patients to adapt their rapid-acting insulin doses to their actual nutritional intake and activity level.
 
-However, calculating prandial insulin requires handling multiple mathematical variables simultaneously:
+Calculating a prandial insulin dose requires factoring in:
 - **Insulin-to-Carb Ratio (ICR)** per meal
 - **Insulin Sensitivity Factor (ISF)**
 - **Target vs. current glycemia (Correction factor)**
 - **Physical exertion offsets (Planned and unplanned activities)**
 
-**Diazen** was created to eliminate calculation errors, reduce cognitive load, and give patients confidence and freedom in their daily routine.
+**Diazen** automates these calculations to minimize dosing errors and reduce cognitive load for patients in their daily management.
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 1. 💉 Prandial Insulin Dose Calculator (FIT)
-- **Clinical FIT Algorithm**: Computes rapid-acting insulin doses based on:
+### 1. Prandial Insulin Dose Calculator (FIT)
+- Computes rapid-acting insulin doses based on:
   - Total meal carbohydrates (g)
   - Pre-prandial blood glucose and individual target glucose
-  - Personalized **ICR** and **ISF**
-- **Activity Correction**: Automatically applies unit/percentage reductions for planned and spontaneous physical exercise based on intensity, duration, and calories burned.
-- **Detailed Dose Breakdown**: Distinguishes between **meal dose**, **correction dose**, and **activity adjustment**.
+  - Configured **ICR** and **ISF** values
+- Dynamic activity compensation: applies dose reductions for planned and spontaneous physical exercise based on intensity, duration, and calories burned.
+- Breakdown of calculated doses: **meal dose**, **correction dose**, and **activity adjustment**.
 
-### 2. 🍽️ Meal & Carbohydrate Tracking
-- Comprehensive meal database with nutrition lookup.
-- Custom plate builder with ingredient breakdown.
-- Saved meal templates for quick, one-tap logging.
-- Complete meal history with calculated carbohydrate intakes.
+### 2. Meal & Carbohydrate Tracking
+- Food and meal database with nutritional estimation.
+- Custom plate composer with ingredient details.
+- Saved meal templates for fast logging.
+- Comprehensive history of meals and carbohydrate intake.
 
-### 3. 🩸 Blood Glucose Monitoring & Trends
+### 3. Blood Glucose Monitoring & Trends
 - Pre- and post-prandial glucose logging.
-- Interactive charts (`fl_chart`) showcasing glycemic variability and target range adherence.
-- Hypoglycemia and hyperglycemia historical insights.
+- Trend visualization using `fl_chart`.
+- Log history for monitoring glycemic variability and target range adherence.
 
-### 4. 🏃 Physical Activity Logging
-- Track diverse workout categories, duration, and intensity levels.
-- Estimation of energy expenditure (METs & calories).
-- Immediate feedback on how specific activities impact glycemic stability and insulin sensitivity.
+### 4. Physical Activity Logging
+- Logging of workout type, duration, and intensity level.
+- Energy expenditure calculation (METs and calories).
+- Tracks exercise impact on blood glucose and insulin sensitivity.
 
-### 5. 👨‍⚕️ Doctor & Healthcare Provider Portal
-- **Dual-role ecosystem**: Dedicated interfaces for both patients and healthcare professionals.
-- **Practitioner View**: Doctors can review their patients' metabolic parameters, dose history, and glycemic trends.
-- **Clinical Summaries**: Export and send structured medical reports (PDF/Email) to assist clinical consultations.
+### 5. Doctor & Healthcare Provider Portal
+- Dedicated interfaces for patients and healthcare professionals.
+- Practitioner view to review patient glycemic history, dose logs, and metabolic parameters.
+- Structured medical summary reports (PDF / Email) for clinical follow-up.
 
-### 6. 🔐 Authentication & User Profiles
-- Secure user management powered by **Firebase Authentication**.
-- Multi-provider support: Email/Password (with verification) and Social Logins (Google, Apple, Facebook).
-- Medical onboarding: Personalized configuration of glycemic targets, sensitivity factors, and medical contacts.
+### 6. Authentication & User Profiles
+- User account management powered by **Firebase Authentication**.
+- Authentication via Email/Password (with verification) and OAuth providers (Google, Apple, Facebook).
+- Profile setup for medical baseline values (target glucose, ICR, ISF, and physician contacts).
 
 ---
 
-## 📱 Screenshots
+## Screenshots
 
 <div align="center">
 
@@ -112,38 +107,38 @@ However, calculating prandial insulin requires handling multiple mathematical va
 
 ---
 
-## 🛠️ System Architecture & Tech Stack
+## System Architecture & Tech Stack
 
 | Domain | Technology / Library | Description |
 |---|---|---|
 | **Framework** | [Flutter](https://flutter.dev) (Dart 3.5+) | Cross-platform mobile development (Android & iOS) |
-| **Backend & Cloud** | [Cloud Firestore](https://firebase.google.com/docs/firestore) | NoSQL real-time cloud database |
+| **Backend & Cloud** | [Cloud Firestore](https://firebase.google.com/docs/firestore) | Real-time NoSQL cloud database |
 | **Authentication** | [Firebase Auth](https://firebase.google.com/docs/auth) | Email/Password, Google Sign-In, Apple, Facebook |
-| **Cloud Storage** | [Firebase Storage](https://firebase.google.com/docs/storage) | Secure storage for user documents and media |
-| **Local Storage** | [Hive](https://pub.dev/packages/hive) & [Shared Preferences](https://pub.dev/packages/shared_preferences) | Fast offline caching and user preferences |
-| **Data Visualization** | [FL Chart](https://pub.dev/packages/fl_chart) | Dynamic, responsive glucose trend charts |
-| **Icons & Design** | Lucide Icons, Google Nav Bar, Cupertino Icons | Modern, clean UI components following Material 3 |
-| **Networking & Email** | HTTP & Mailer | Nutrition APIs, activity sync, and medical reporting |
+| **Cloud Storage** | [Firebase Storage](https://firebase.google.com/docs/storage) | Media and document storage |
+| **Local Storage** | [Hive](https://pub.dev/packages/hive) & [Shared Preferences](https://pub.dev/packages/shared_preferences) | Local caching and offline preferences |
+| **Data Visualization** | [FL Chart](https://pub.dev/packages/fl_chart) | Glycemic trends and charts |
+| **UI Components** | Lucide Icons, Google Nav Bar, Cupertino Icons | Interface styling and navigation |
+| **Networking & Services** | HTTP & Mailer | Nutrition API integration and medical report dispatch |
 
 ---
 
-## 📂 Project Directory Structure
+## Project Directory Structure
 
 ```text
 lib/
-├── authentication/              # Authentication & user onboarding flows
+├── authentication/              # Authentication & onboarding flows
 │   ├── auth_state_service.dart  # Session state & routing management
 │   ├── doctor_signin_screen.dart# Healthcare provider sign-in
 │   ├── loginpage.dart           # Patient login screen
 │   ├── signuppage.dart          # Patient registration screen
-│   ├── medical_info_form.dart   # Baseline FIT parameters setup (ICR, ISF)
+│   ├── medical_info_form.dart   # Baseline parameters setup (ICR, ISF)
 │   ├── social_auth_service.dart # Google / Apple / Facebook OAuth
 │   └── ...
 ├── classes/                     # Data models & Firestore operations
 │   ├── activite.dart            # Activity data model
 │   ├── firestore_ops.dart       # Centralized Firestore CRUD operations
 │   ├── glucose_log.dart         # Blood glucose measurement entity
-│   ├── ingredient.dart          # Food ingredient & carb breakdown
+│   ├── ingredient.dart          # Ingredient & carb breakdown
 │   ├── injection.dart           # Insulin injection entity & calculations
 │   ├── medecin.dart             # Practitioner profile model
 │   ├── repas.dart               # Meal entity
@@ -153,12 +148,12 @@ lib/
 │   ├── calculate_dose_screen.dart# Interactive FIT dose calculation engine
 │   ├── dose_result_screen.dart  # Detailed dose calculation summary
 │   ├── log_glucose_screen.dart  # Glucose measurement input screen
-│   ├── add_plate_screen.dart    # Custom meal / carb composition
-│   ├── saved_meals_screen.dart  # Favorite meals catalog
+│   ├── add_plate_screen.dart    # Meal & carb composition
+│   ├── saved_meals_screen.dart  # Saved meals catalog
 │   ├── activity_screen.dart     # Physical activity logger
-│   ├── history_screen.dart      # Historical diary of logs & injections
+│   ├── history_screen.dart      # Logbook of meals, doses, and glucose
 │   ├── doctor_home_screen.dart  # Medical practitioner dashboard
-│   ├── patient_screen.dart      # Practitioner's detailed patient view
+│   ├── patient_screen.dart      # Detailed patient view for doctors
 │   ├── rapport_screen.dart      # Clinical report generation & export
 │   └── ...
 ├── firebase_options.dart        # Platform-specific Firebase credentials
@@ -167,15 +162,15 @@ lib/
 
 ---
 
-## ⚡ Getting Started
+## Getting Started
 
 ### Prerequisites
 
-Ensure you have the following installed on your development machine:
+Ensure the following tools are installed:
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (`^3.5.4` or later)
 - [Dart SDK](https://dart.dev/get-dart)
-- [Android Studio](https://developer.android.com/studio) or [Xcode](https://developer.apple.com/xcode/) (for iOS simulation)
-- [Firebase CLI](https://firebase.google.com/docs/cli) (if configuring your own Firebase project)
+- [Android Studio](https://developer.android.com/studio) or [Xcode](https://developer.apple.com/xcode/)
+- [Firebase CLI](https://firebase.google.com/docs/cli)
 
 ### Installation
 
@@ -190,28 +185,28 @@ Ensure you have the following installed on your development machine:
    flutter pub get
    ```
 
-3. **Verify Flutter setup**:
+3. **Verify environment**:
    ```bash
    flutter doctor
    ```
 
 ### Firebase Configuration
 
-This application relies on Firebase services. If you are deploying or testing with your own Firebase project:
+To configure with your own Firebase project:
 
 1. Install the FlutterFire CLI:
    ```bash
    dart pub global activate flutterfire_cli
    ```
-2. Configure your Firebase apps:
+2. Configure Firebase credentials:
    ```bash
    flutterfire configure
    ```
-3. Enable **Authentication** (Email/Password, Google, Apple), **Cloud Firestore**, and **Firebase Storage** in the Firebase Console.
+3. Enable **Authentication**, **Cloud Firestore**, and **Firebase Storage** in the Firebase Console.
 
-### Run the App
+### Running the Application
 
-Connect an emulator or physical device, then run:
+Connect a physical device or launch an emulator:
 
 ```bash
 # Debug mode
@@ -223,31 +218,18 @@ flutter run --release
 
 ---
 
-## ⚠️ Medical Disclaimer
+## Medical Disclaimer
 
-> **IMPORTANT**: **Diazen** is intended solely as an educational and assistive tool for individuals practicing Functional Insulin Therapy.  
-> It is **not** a certified medical device and does not replace the professional advice, diagnosis, or treatment of a qualified endocrinologist or diabetologist.  
-> Users must always verify calculated doses against their personal medical instructions and double-check their blood glucose levels before administering insulin.
+> **IMPORTANT**: **Diazen** is intended as an assistive tool for individuals practicing Functional Insulin Therapy.  
+> It is not a certified medical device and does not replace professional medical advice, diagnosis, or treatment.  
+> Users must always verify calculated doses against their individual medical prescriptions and check blood glucose levels prior to insulin administration.
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-- [ ] **CGM (Continuous Glucose Monitor) Integration**: Direct Bluetooth/Cloud synchronization with Dexcom and FreeStyle Libre sensors.
-- [ ] **Computer Vision Meal Recognition**: Automatic carbohydrate estimation via smartphone camera and AI food classification.
-- [ ] **Smartwatch Companion App**: WearOS and watchOS support for quick bolus logging on the wrist.
+- [ ] **Continuous Glucose Monitor (CGM) Integration**: Bluetooth synchronization with Dexcom and FreeStyle Libre sensors.
+- [ ] **Computer Vision Meal Recognition**: Automated carbohydrate estimation via camera.
+- [ ] **Smartwatch Companion App**: WearOS and watchOS companion for quick bolus logging.
 - [ ] **Multi-Language Support**: Complete French and English localization.
 
----
-
-## 👥 Author & Acknowledgments
-
-- **Abderrahmane Benchohra** - Lead Developer & Designer - [GitHub](https://github.com/benchohrabdou)
-- Developed as a **Bachelor's Degree Final-Year Project**.
-- Special thanks to supervising faculty and consulting healthcare specialists for their clinical insights into Functional Insulin Therapy protocols.
-
----
-
-<div align="center">
-  <sub>Made with ❤️ and Flutter to make diabetes management easier.</sub>
-</div>
